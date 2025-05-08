@@ -1,0 +1,9 @@
+class Approximator:
+    def __init__(self, name):
+        self.name = name
+
+    def train(self, x_train, y_train):
+        raise NotImplementedError
+
+    def predict(self, x):
+        raise NotImplementedError
