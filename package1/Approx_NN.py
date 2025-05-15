@@ -15,15 +15,28 @@ class NN_Approximator(Approximator):
         self.nodesPerLayer = params[2]
         self.nn_general = NN_General(self.epochs,self.samplePoints,self.nodesPerLayer)
 
-    def generate_data(self,function,samplePoints):
+    def generate_linear_data(self,function,samplePoints):
         x = np.linspace(function.xdomainstart, function.xdomainend, samplePoints)
         y = np.linspace(function.ydomainstart, function.ydomainend, samplePoints)
         X, Y = np.meshgrid(x, y)
         Z = function.evaluate(X,Y)
         return X, Y, Z
 
+    def generate_linear_data(self,function,samplePoints):
+        x = np.linspace(function.xdomainstart, function.xdomainend, samplePoints)
+        y = np.linspace(function.ydomainstart, function.ydomainend, samplePoints)
+        X, Y = np.meshgrid(x, y)
+        Z = function.evaluate(X,Y)
+        return X, Y, Z
+
+    def generate_random_data(self,function,samplePoints):
+        X=None
+        Y=None
+        Z=None
+        return X,Y,Z
+
     def train(self,function):
-        X, Y,Z = self.generate_data(function,self.samplePoints)
+        X, Y,Z = self.generate_linear_data(function,self.samplePoints)
 
         inputs = np.stack([X.ravel(), Y.ravel()], axis=1)
         targets = Z.ravel().reshape(-1, 1)
