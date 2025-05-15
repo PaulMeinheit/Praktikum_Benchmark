@@ -12,17 +12,16 @@ def train_and_predict(approximator_data):
     approximator = copy.deepcopy(approximator)
     function = function_class(*function_params)
 
-    start_train = time.time()
+    start_train = time.process_time_ns()
     approximator.train(function)
-    train_time = time.time() - start_train
+    train_time_s = (time.process_time_ns() - start_train)/1e9
 
-    start_eval = time.process_time_ns
-    
+    start_eval = time.process_time_ns()
     Z_pred = approximator.predict(X, Y)
-    eval_time = time.process_time_ns - start_eval
-
+    eval_time_s = (time.process_time_ns() - start_eval)/ 1e9
+ 
     mse = np.mean((Z_true - Z_pred) ** 2)
-    return approximator.name, Z_pred, mse, train_time, eval_time
+    return approximator.name, Z_pred, mse, train_time_s, eval_time_s
  
 
 from concurrent.futures import ProcessPoolExecutor
@@ -93,7 +92,7 @@ class Experiment:
                            origin='lower', cmap='viridis', aspect='auto', norm=norm)
             title = f'{name}\n (MSE: {mse:.4f})'
             if train_time is not None:
-                title += f'\nTrain: {train_time:.2f}s, Eval: {eval_time:.2f}s'
+                title += f'\nTrain: {train_time:.2f}s, Eval: {eval_time:.6f}s'
             ax.set_title(title)
             ax.set_xlabel('x')
             ax.set_ylabel('y')
