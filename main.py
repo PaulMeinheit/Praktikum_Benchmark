@@ -24,5 +24,5 @@ for i in [32,64,128,256]:
     for j in [1,2,4,8,16,32,64]:
         name = f"Neuronales Netz E: {100*j} & L: {i} (fully connected)"
         approxList.append(NN_Approximator(name,[10*j,300,[i,i,i]]))
-exp = Experiment(False, True, approxList, function_Rosenbrock)
+exp = Experiment(True, False, [approx_nn_E500_L4_4_4], function_sinChess)
 exp.run()
