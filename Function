@@ -1,8 +1,0 @@
-class Function:
-    def __init__(self, name, func, domain):
-        self.name = name
-        self.func = func
-        self.domain = domain  # z. B. (0, 1)
-
-    def evaluate(self, x):
-        return self.func(x)
