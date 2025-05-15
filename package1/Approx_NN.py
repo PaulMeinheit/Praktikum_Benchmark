@@ -49,7 +49,7 @@ class NN_Approximator(Approximator):
         inputs = np.stack([x.ravel(), y.ravel()], axis=1)
         input_tensor = torch.tensor(inputs, dtype=torch.float32)
         with torch.no_grad():
-            pred = self.nn_general(input_tensor).cpu().numpy().reshape(100,100)
+            pred = self.nn_general(input_tensor).cpu().numpy().reshape(300,300)
         return pred
      
 class NN_General(nn.Module):
