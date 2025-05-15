@@ -15,13 +15,14 @@ approx_lin_500 = Approx_Linear_Regression(f"Linear Model (500 Samples)",[500])
 
 approx_id = Identity_Approximator("Identity",[])
 
-approx_nn_E500_L4_4_4 =NN_Approximator("name",[900,400,[4,4,4]])
-approx_nn_E500_L10_10_10 =NN_Approximator("name",[1900,400,[10,10,10]])
-#sin-function experiment:
+approx_nn_E500_L4_4_4 = NN_Approximator("name",[900,400,[4,4,4]])
+approx_nn_E500_L16_16_16_16 = NN_Approximator("name",[3900,500,[16,16,16,16]])
+
+#Rosenbrock experiment:
 approxList = [approx_id,approx_lin_1000,approx_id]
-for i in [4,8,12,16,32]:
+for i in [32,50]:
     for j in [4,8,16,32,64]:
         name = f"Neuronales Netz E: {100*j} & L: {i} (fully connected)"
         approxList.append(NN_Approximator(name,[10*j,300,[i,i,i]]))
-exp = Experiment(True,True, approxList, function_Rosenbrock,1e-6,1e3)
+exp = Experiment(True,True, [approx_nn_E500_L16_16_16_16], function_Rosenbrock,1e-6,1e5)
 exp.run()
