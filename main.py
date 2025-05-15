@@ -16,7 +16,7 @@ approx_lin_500 = Approx_Linear_Regression(f"Linear Model (500 Samples)",[500])
 approx_id = Identity_Approximator("Identity",[])
 
 approx_nn_E500_L4_4_4 = NN_Approximator("name",[900,400,[4,4,4]])
-approx_nn_E500_L16_16_16_16 = NN_Approximator("name",[3900,500,[16,16,16,16]])
+approx_nn_E500_L16_16_16_16 = NN_Approximator("name",[1900,500,[16,16,16,16]])
 
 #Rosenbrock experiment:
 approxList = [approx_id,approx_lin_1000,approx_id]
