@@ -25,9 +25,9 @@ approx_nn_E500_L16_16_16 = NN_Approximator("16er",[1200,50,[16,16,16]])
 
 #Rosenbrock experiment:
 approxList = [approx_id,approx_nn_E500_L16_16_16,approx_lin_500]
-for i in [4,8,16]:
-    for j in [4,8,16,64]:
+for i in [8,16]:
+    for j in [4,8]:
         name = f"NN:-Epochs: {100*j} -L: {i},{i},{i} (fully connected)"
         approxList.append(NN_Approximator(name,[100*j,300,[i,i,i]]))
-exp = Experiment(True,False, approxList, function_chess)
+exp = Experiment(True,False, [approx_id], function_ackley)
 exp.run()

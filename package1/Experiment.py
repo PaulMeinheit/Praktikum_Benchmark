@@ -35,7 +35,7 @@ class Experiment:
         self.logarithmic=logarithmic
         self.vmin = vmin
         self.vmax = vmax
-        self.contourLevels = 8
+        self.contourLevels = 80
         
 
     def run(self):
