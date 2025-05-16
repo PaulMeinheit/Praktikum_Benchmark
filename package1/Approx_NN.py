@@ -72,7 +72,9 @@ class NN_General(nn.Module):
         for i in range(1, len(nodesPerLayer)):
             layers.append(nn.Linear(nodesPerLayer[i - 1], nodesPerLayer[i]))
             layers.append(nn.ReLU())
-        layers.append(nn.Linear(nodesPerLayer[-1], 1))  # Letzter Layer: Ausgabe
+        
+        # Letzter Layer: Ausgabe
+        layers.append(nn.Linear(nodesPerLayer[-1], 1))  
         self.net = nn.Sequential(*layers)
 
     def forward(self, x):

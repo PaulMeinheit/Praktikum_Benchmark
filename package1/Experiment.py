@@ -35,6 +35,7 @@ class Experiment:
         self.logarithmic=logarithmic
         self.vmin = vmin
         self.vmax = vmax
+        self.contourLevels = 8
         
 
     def run(self):
@@ -45,7 +46,7 @@ class Experiment:
 
         n_approx = len(self.approximators)
 
-        max_cols = 3
+        max_cols = 4
         total_plots = n_approx + 1
         n_cols = min(max_cols, total_plots)
         n_rows = (total_plots + n_cols - 1) // n_cols
@@ -60,6 +61,8 @@ class Experiment:
         im = ax.imshow(Z_true, extent=[self.function.xdomainstart, self.function.xdomainend,
                                        self.function.ydomainstart, self.function.ydomainend],
                        origin='lower', cmap='viridis', aspect='auto', norm=norm)
+        # Höhenlinien für Approximation
+        ax.contour(X, Y, Z_true, levels=self.contourLevels, colors='white', linewidths=0.7)
         ax.set_title("Original Function")
         ax.set_xlabel('x')
         ax.set_ylabel('y')
@@ -90,6 +93,8 @@ class Experiment:
             im = ax.imshow(Z_pred, extent=[self.function.xdomainstart, self.function.xdomainend,
                                            self.function.ydomainstart, self.function.ydomainend],
                            origin='lower', cmap='viridis', aspect='auto', norm=norm)
+            # Höhenlinien für Approximation
+            ax.contour(X, Y, Z_pred, levels=self.contourLevels, colors='white', linewidths=0.7)
             title = f'{name}\n (MSE: {mse:.4f})'
             if train_time is not None:
                 title += f'\nTrain: {train_time:.2f}s, Eval: {eval_time:.6f}s'
