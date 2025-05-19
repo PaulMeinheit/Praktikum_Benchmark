@@ -28,14 +28,15 @@ from concurrent.futures import ProcessPoolExecutor
 import copy
 
 class Experiment:
-    def __init__(self, parallel,logarithmic, approximators, function, vmin=None, vmax=None):
+    def __init__(self,name, parallel,logarithmic, approximators, function, vmin=None, vmax=None):
         self.approximators = approximators
         self.function = function
         self.parallel = parallel
         self.logarithmic=logarithmic
         self.vmin = vmin
         self.vmax = vmax
-        self.contourLevels = 80
+        self.contourLevels = 8
+        self.name = name
         
 
     def run(self):
@@ -52,8 +53,7 @@ class Experiment:
         n_rows = (total_plots + n_cols - 1) // n_cols
         fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows))
         axes = np.array(axes).reshape(-1)
-        ax = axes[0]
-         
+        ax = axes[0] 
         norm = None
         if self.logarithmic:
             norm = LogNorm(vmin=self.vmin, vmax=self.vmax)
@@ -107,7 +107,7 @@ class Experiment:
             axis.axis('off')
 
         plt.tight_layout()
-        plt.savefig("results_large.svg", format="svg")
+        plt.savefig(self.name +".svg", format="svg")
         if np.size(self.approximators)<4:
             plt.show()
         return [r[1] for r in results]

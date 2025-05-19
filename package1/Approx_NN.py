@@ -9,12 +9,17 @@ import matplotlib.pyplot as plt
 class NN_Approximator(Approximator):
     def __init__(self, name,params):
         self.name = name
+        self.epochSum = 0
         self.function = 0
         self.epochs = params[0]
         self.samplePoints = params[1]
         self.nodesPerLayer = params[2]
         self.nn_general = NN_General(self.epochs,self.samplePoints,self.nodesPerLayer)
-
+        
+        self.criterion = nn.MSELoss()
+        self.optimizer = optim.Adam(self.nn_general.parameters(), lr=0.01)
+        
+        
     def generate_linear_data(self,function,samplePoints):
         x = np.linspace(function.xdomainstart, function.xdomainend, samplePoints)
         y = np.linspace(function.ydomainstart, function.ydomainend, samplePoints)
@@ -36,26 +41,22 @@ class NN_Approximator(Approximator):
         return X,Y,Z
 
     def train(self,function):
-        X, Y,Z = self.generate_linear_data(function,self.samplePoints)
-
-        inputs = np.stack([X.ravel(), Y.ravel()], axis=1)
+        X,Y,Z = self.generate_linear_data(function,self.samplePoints)
+        self.function = function
+        inputs = np.stack([X.ravel(),Y.ravel()], axis=1)
         targets = Z.ravel().reshape(-1, 1)
-
+        
         input_tensor = torch.tensor(inputs, dtype=torch.float32)
         target_tensor = torch.tensor(targets, dtype=torch.float32)
-
         
-        criterion = nn.MSELoss()
-        optimizer = optim.Adam(self.nn_general.parameters(), lr=0.01)
-
-        self.function = function
         for epoch in range(self.epochs):
             self.nn_general.train()
-            optimizer.zero_grad()
+            self.optimizer.zero_grad()
             output = self.nn_general(input_tensor)
-            loss = criterion(output, target_tensor)
+            loss = self.criterion(output, target_tensor)
             loss.backward()
-            optimizer.step()
+            self.optimizer.step()
+        self.epochSum+=self.epochs
 
     def predict(self, x, y):
         self.nn_general.eval()

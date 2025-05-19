@@ -24,11 +24,13 @@ approx_nn_E500_L4_4_4 = NN_Approximator("4er",[1200,50,[4,4,4]])
 approx_nn_E500_L16_16_16 = NN_Approximator("16er",[1200,50,[16,16,16]])
 
 #Rosenbrock experiment:
-approxList = [approx_id,approx_nn_E500_L16_16_16,approx_lin_500]
-for i in [8,16]:
-    for j in [4,8]:
-        name = f"NN:-Epochs: {100*j} -L: {i},{i},{i} (fully connected)"
-        approxList.append(NN_Approximator(name,[100*j,300,[i,i,i]]))
-exp = Experiment(True,False, [approx_id], function_ackley)
-exp.run()
+exp_rosenBrock_list = []
+approxList = [approx_id]
+for j in {8,16,32}:
+    name = f"NN-Epochs: {100} -L: {j},{j},{j} (fully connected)"
+    approxList.append(NN_Approximator(name,[100,150,[j,j,j]]))
 
+for i in range(1,4):
+    exp_rosenBrock_list.append(Experiment(f"Rosenbrock-Funktion mit {i*100} Epochen",True,True, approxList, function_rosenbrock))
+for exp in exp_rosenBrock_list:
+    exp.run()
