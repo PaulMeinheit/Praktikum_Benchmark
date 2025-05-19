@@ -31,3 +31,4 @@ for i in [8,16]:
         approxList.append(NN_Approximator(name,[100*j,300,[i,i,i]]))
 exp = Experiment(True,False, [approx_id], function_ackley)
 exp.run()
+
