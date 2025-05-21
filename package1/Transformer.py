@@ -173,6 +173,11 @@ class CreateTransformer(nn.Module):
         x = x.transpose(0, 1)
         x = self.output_proj(x)
         return x
+####
+
+
+
+####
 # --------- transformer for use  (das usen Timo) ---------
 class Transformer_Approximator(Approximator):
     def __init__(
@@ -185,16 +190,25 @@ class Transformer_Approximator(Approximator):
         pos_encoding_type='sinusoidal', #----type of positional encoding
         dropout=0.1, #----dropout value
         nnactivation_function= 'relu',
-        inputdimensions = 1,
+        inputdimensions = 2,
         outputdimensions = 1,
         params=None,
 
     ):
 
         if params is None:
-            params = [1200, 50, [8, 8, 8, 8], 1, 1]
+            params = [1200, 50, [8, 8, 8, 8]]
         self.epochSum = 0
         self.function = 0
+        self.name=name
+        self.dim_model=dim_model #----Amount of dimensions a vector embedding has
+        self.num_heads=num_heads  #----Amount of heads in multi head attention
+        self.num_layers=num_layers #-----Amount of encoder Layers
+        self.max_len=max_len #-----Amount point to be handheld
+        self.pos_encoding_type=pos_encoding_type #----type of positional encoding
+        self.dropout=dropout #----dropout value
+        self.nnactivation_function= nnactivation_function
+        
 
         self.epochs = params[0]
         self.samplePoints = params[1] #----Amount of points to be used  to
@@ -203,16 +217,16 @@ class Transformer_Approximator(Approximator):
         self.outputdimensions = outputdimensions
 
         self.transformer = CreateTransformer(
-            dim_model=dim_model,
-            num_heads=num_heads,
+            dim_model=self.dim_model,
+            num_heads=self.num_heads,
             hidden_dims=self.nodesPerLayer,
-            num_layers=num_layers,
-            max_len=max_len,
-            pos_encoding_type=pos_encoding_type,
-            dropout=dropout,
-            activation_fn=nnactivation_function,
-            inputdimensions=inputdimensions,
-            outputdimensions=outputdimensions,
+            num_layers=self.num_layers,
+            max_len=self.max_len,
+            pos_encoding_type=self.pos_encoding_type,
+            dropout=self.dropout,
+            activation_fn=self.nnactivation_function,
+            inputdimensions=self.inputdimensions,
+            outputdimensions=self.outputdimensions,
         )
         self.criterion = nn.MSELoss()
         self.optimizer = optim.Adam(self.transformer.parameters(), lr=0.01)
@@ -222,12 +236,17 @@ class Transformer_Approximator(Approximator):
         self.function = function  # Save reference to the function
 
         # Generate training input
-        x_vals = torch.linspace(-math.pi, math.pi, self.samplePoints).unsqueeze(1)  # (samplePoints, 1)
-        if self.inputdimensions > 1:
-            x_vals = x_vals.repeat(1, self.inputdimensions)  # (samplePoints, inputdimensions)
+        x_vals = torch.linspace(self.function.xdomainstart, self.function.xdomainend, self.samplePoints).unsqueeze(1)  # (samplePoints, 1)
+        if self.inputdimensions == 2:
+            x = torch.linspace(self.function.xdomainstart, self.function.xdomainend, self.samplePoints).unsqueeze(1)  # (samplePoints, 1)
+            y = torch.linspace(self.function.ydomainstart, self.function.ydomainend, self.samplePoints)
+            X, Y = torch.meshgrid(x, y, indexing='ij')  # (samplePoints, samplePoints)
+            x_vals = torch.stack([X.ravel(), Y.ravel()], dim=1)  #(samplePoints², 2)
+        if self.inputdimensions > 2:
+            x_vals = x_vals.repeat(1, self.inputdimensions)  #(samplePoints, inputdimensions)
 
         # Apply the target function
-        y_vals = torch.stack([function(x) for x in x_vals], dim=0)  # (samplePoints, outputdimensions)
+        y_vals = torch.stack([function.evaluate(x[0],x[1]) for x in x_vals], dim=0)  # (samplePoints, outputdimensions)
 
         # Prepare for transformer: (batch, seq_len, input/output_dim)
         x_input = x_vals.unsqueeze(0)  # (1, seq_len, input_dim)
@@ -243,16 +262,16 @@ class Transformer_Approximator(Approximator):
             loss.backward()
             self.optimizer.step()
 
-            if epoch % 100 == 0 or epoch == self.epochs - 1:
+            if epoch % 2 == 0 or epoch == self.epochs - 1:
                 print(f"[{self.__class__.__name__}] Epoch {epoch}: Loss = {loss.item():.6f}")
 
         self.epochSum += self.epochs
 
-    def predict(self, pointlist):
+    def predict(self, X):
         self.transformer.eval()
 
         # Convert to tensor of shape (1, seq_len, input_dim)
-        x_input = torch.tensor(pointlist, dtype=torch.float32).unsqueeze(0)  # (1, seq_len, input_dim)
+        x_input = torch.tensor(X, dtype=torch.float32).unsqueeze(0)  # (1, seq_len, input_dim)
 
         with torch.no_grad():
             prediction = self.transformer(x_input)  # (1, seq_len, output_dim)
@@ -274,82 +293,4 @@ class DataCreation ():
         # x is a 1D tensor of shape (2,)
         return torch.tensor([torch.sin(x[0]) + torch.cos(x[1])])  # → shape: [1]
 
-    # ----hier ist ein test timo (den ich dir gezeigt habe)
-    # Generate test grid over 2D input space
-    grid_size = 50
-    x1 = np.linspace(-np.pi, np.pi, grid_size)
-    x2 = np.linspace(-np.pi, np.pi, grid_size)
-    xx1, xx2 = np.meshgrid(x1, x2)
-    grid_points = np.stack([xx1.ravel(), xx2.ravel()], axis=-1)  # (grid_size², 2)
-
-    approximator = Transformer_Approximator(
-        dim_model=64,
-        num_heads=4,
-        num_layers=3,
-        max_len=grid_size**2,
-        pos_encoding_type='rope',
-        dropout=0.1,
-        nnactivation_function='gelu',
-        inputdimensions=2,
-        outputdimensions=1,
-        params=[1000, 400, [64, 64], 1, 1]  # [epochs, samplePoints, nodesPerLayer, _, _]
-    )
-
-    # Train the model
-    approximator.train(target_function)
-
-    # Predict
-    predictions = approximator.predict(grid_points).reshape(grid_size, grid_size)
-
-    # Ground truth for comparison
-    true_values = (np.sin(xx1) + np.cos(xx2))
-
-    # Plot prediction
-    fig = plt.figure(figsize=(12, 5))
-
-    ax1 = fig.add_subplot(1, 2, 1, projection='3d')
-    ax1.plot_surface(xx1, xx2, true_values, cmap='viridis')
-    ax1.set_title('True: sin(x1) + cos(x2)')
-
-    ax2 = fig.add_subplot(1, 2, 2, projection='3d')
-    ax2.plot_surface(xx1, xx2, predictions, cmap='plasma')
-    ax2.set_title('Transformer Prediction')
-
-    plt.tight_layout()
-    plt.show()
-# --------- alter scheiß----
-# --------- Training ---------
-# Prepare input for transformer: (batch_size=1, seq_len, 1)
-#x_vals,y_vals = DataCreation.create1Dto1Dmathdata(negativerange = -np.pi, positiverange = np.pi, steps = 200, math_function =lambda x: torch.sin(x) + torch.cos(x))
-#x_input = x_vals.unsqueeze(0)  # (1, n_points, 1)
-#y_target = y_vals.unsqueeze(0)  # (1, n_points, 1)
-
-#model = CreateTransformer()
-#optimizer = optim.Adam(model.parameters(), lr=1e-3)
-#loss_fn = nn.MSELoss()
-
-# Training
-#n_epochs = 500
-#for epoch in range(n_epochs):
-    #    model.train()  # ---model.train() tells your model that you are training the model. This helps inform layers such as Dropout and BatchNorm, which are designed to behave differently during training and evaluation.
-    #optimizer.zero_grad()
-    #output = model(x_input)
-    #loss = loss_fn(output, y_target)
-    #loss.backward()
-    #optimizer.step()
-
-    #if epoch % 10 == 0 or epoch == n_epochs - 1:
-#   print(f"Epoch {epoch}: Loss = {loss.item():.6f}")
-
-# Evaluate model
-#model.eval()
-#with torch.no_grad():
-#   prediction = model(x_input).squeeze().cpu()
-
-# Plot
-#plt.plot(x_vals.squeeze(), y_vals.squeeze(), label='sin(x)')
-#plt.plot(x_vals.squeeze(), prediction, label='Transformer approx')
-#plt.legend()
-#plt.title("Sine Function Approximation with Transformer")
-#plt.grid(True)
-#plt.show()
+    

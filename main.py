@@ -5,6 +5,7 @@ from package1.Approx_Linear_Regression import Approx_Linear_Regression
 from package1.Function_Chess import Function_Chess
 from package1.Function_Rosenbrock import Function_Rosenbrock
 from package1.Approx_NN import NN_Approximator
+from package1.Transformer import Transformer_Approximator
 from package1.Function_Ackley import Function_Ackley
 from package1.Function_Heart import Function_Heart
 import numpy as np
@@ -18,13 +19,13 @@ function_rosenbrock = Function_Rosenbrock("Rosenbrock",-2,2,-1,3)
 def getApproxs():
     approx_lin_1000 = Approx_Linear_Regression(f"Linear Model (1000 Samples)",[1000])
     approx_lin_500 = Approx_Linear_Regression(f"Linear Model (500 Samples)",[500])
-
+    transformer = Transformer_Approximator("First Tranformer Try",64,4,2,10000,'sinusoidal',0.1,'relu',2,1,[100,70,[4,4,4]])
     approx_id = Identity_Approximator("Identity-Approximation",[])
 
     approx_nn_E500_L8_8_8 = NN_Approximator("8er",[1200,50,[8,8,8,8]])
     approx_nn_E500_L4_4_4 = NN_Approximator("4er",[1200,50,[4,4,4]])
     approx_nn_E500_L16_16_16 = NN_Approximator("16er",[1200,50,[16,16,16]])
-
+    print("1")
     approxList = [approx_id]
     for j in {16,32}:
         for i in {100,500,6000}:

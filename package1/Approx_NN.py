@@ -27,7 +27,7 @@ class NN_Approximator(Approximator):
         Z = function.evaluate(X,Y)
         return X, Y, Z
 
-    def generate_linear_data(self,function,samplePoints):
+    def generate_random_data(self,function,samplePoints):
         x = np.linspace(function.xdomainstart, function.xdomainend, samplePoints)
         y = np.linspace(function.ydomainstart, function.ydomainend, samplePoints)
         X, Y = np.meshgrid(x, y)
