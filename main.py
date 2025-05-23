@@ -13,7 +13,7 @@ import numpy as np
 function_heart = Function_Heart("Herz-Shape",-1.5,1.5,-1.5,1.3)
 function_ackley = Function_Ackley("Ackley Function",-4,4,-4,4)
 function_chess = Function_Chess("Chess field",0,8,0,8)
-function_sinChess = Sin2D_Function("sin(x)*cos(y)", (-2*(np.pi)),(2*(np.pi)),(-2*(np.pi)),(2*(np.pi)))
+function_sinChess = Sin2D_Function("sin(x)*cos(y)", 0,(2*(np.pi)),0,(2*(np.pi)))
 function_rosenbrock = Function_Rosenbrock("Rosenbrock",-2,2,-1,3)
 
 def getApproxs():
@@ -27,6 +27,7 @@ def getApproxs():
     approx_nn_E500_L16_16_16 = NN_Approximator("16er",[1200,50,[16,16,16]])
     print("1")
     approxList = [approx_id]
+    return approxList
     for j in {16,32}:
         for i in {100,500,6000}:
             name = f"NN-Aufbau: {j}-{j}-{j} (fully connected)\n& Epochen: {i}"
@@ -38,15 +39,15 @@ def getApproxs():
 #Alle Experimente laufen lassen:
 exp_list = []
 
-exp_list.append(Experiment(f"Rosenbrock-Funktion",True,True, getApproxs(), function_rosenbrock,vmin=1e-5,vmax=1e4))
+#exp_list.append(Experiment(f"Rosenbrock-Funktion",True,True, getApproxs(), function_rosenbrock,vmin=1e-5,vmax=1e4))
 
-exp_list.append(Experiment(f"Ackley-Funktion",True,False, getApproxs(), function_ackley))
+#exp_list.append(Experiment(f"Ackley-Funktion",True,False, getApproxs(), function_ackley))
 
-exp_list.append(Experiment(f"Schach-Funktion",True,False, getApproxs(), function_chess))
+#exp_list.append(Experiment(f"Schach-Funktion",True,False, getApproxs(), function_chess))
 
 exp_list.append(Experiment(f"Sinus-Schach-Funktion",True,False, getApproxs(), function_sinChess))
 
-exp_list.append(Experiment(f"Herz-Funktion",True,False, getApproxs(), function_heart))
+#exp_list.append(Experiment(f"Herz-Funktion",True,False, getApproxs(), function_heart))
 
 for exp in exp_list:
     exp.run()

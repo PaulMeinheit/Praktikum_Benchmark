@@ -11,4 +11,4 @@ class Sin2D_Function(Function2D):
         self.ydomainend = ydomainend
 
     def evaluate(self, x,y):
-        return np.multiply(np.sin(x), np.cos(y))
+        return np.multiply(np.sin(8*(np.pi/(self.xdomainend-self.xdomainstart)) * (x-np.pi/2)), np.sin(8*(np.pi/(self.ydomainend-self.ydomainstart)) * (y-np.pi/2)))
