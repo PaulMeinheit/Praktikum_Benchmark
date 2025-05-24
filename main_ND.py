@@ -5,7 +5,10 @@ from multiDim.Function_SinChess_2D import Function_Sin_2D
 from multiDim.Function_multiDimOutput import Function_MultiDimOutput
 from multiDim.ShepardInterpolator import ShepardInterpolator
 from multiDim.Approximator_Identity_ND import Approximator_Identity_ND
+from multiDim.Function_Rotation3D import Function_Rotation3D 
+
 import numpy as np
+import torch
 
 
 def getApprox():
@@ -19,17 +22,18 @@ def getApprox():
     return apprx
 
 def getFunc():
+    function_rotation = Function_Rotation3D()
     function_multiDim=Function_MultiDimOutput()
     function_sin_2D = Function_Sin_2D("Sinus-2D",2,1,[0,0],[2*np.pi,2*np.pi])
     function_sin_4D = Function_Sin_4D()
 
     return function_sin_4D 
+epochs = np.arange(1,2000,100)
+#loss_vs_epochs = Experiment_ND("Test",[],getFunc())
+#loss_vs_epochs.plot_norms_vs_epochs(epochs,100,[4,4])
 
-
-exp = Experiment_ND("Test",[],getFunc())
+exp = Experiment_ND("Test",getApprox(),getFunc())
 exp.train()
-epoch_list = [100,110,120,130,140,150,160,170,180,190,200]
-exp.plot_norms_vs_epochs(epoch_list,1000,[32,32,32])
-#exp.print_loss_summary()
-#exp.plot_1d_slices()
-#exp.plot_pca_querschnitt_all_outputs()
+exp.print_loss_summary()
+exp.plot_1d_slices()
+exp.plot_pca_querschnitt_all_outputs()
