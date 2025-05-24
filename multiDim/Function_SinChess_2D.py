@@ -2,7 +2,7 @@ import numpy as np
 from .FunctionND import FunctionND
 
 class Function_Sin_2D(FunctionND):
-    def __init__(self, name,inDomainStart,inDomainEnd,inputDim=2,outputDim=1):
+    def __init__(self, name = "Sinus-2D", inputDim=2, outputDim=1,inDomainStart=[0,0], inDomainEnd=[2*np.pi,2*np.pi]):
         self.name = name
         self.inDomainStart = inDomainStart
         self.inDomainEnd = inDomainEnd
@@ -13,8 +13,8 @@ class Function_Sin_2D(FunctionND):
 
     def evaluate(self, inputs: np.ndarray) -> np.ndarray:
         """
-        inputs: np.ndarray mit Form (n, 4), wobei jede Zeile ein Vektor [x, y, z, u] ist
-        returns: np.ndarray mit Form (n,1), wobei jedes Ergebnis sin(x)*sin(y)*sin(z)*sin(u) ist
+        inputs: np.ndarray mit Form (n, 2), wobei jede Zeile ein Vektor [x, y] ist
+        returns: np.ndarray mit Form (n,1), wobei jedes Ergebnis sin(x)*sin(y) ist
         """
         x = inputs[:, 0]
         y = inputs[:, 1]

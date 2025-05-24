@@ -8,7 +8,7 @@ import torch.optim as optim
 class Approximator_NN_ND(ApproximatorND):
     def __init__(self, name, params,activationFunction=nn.ReLU(),lossCriterium=nn.MSELoss()):
         self.name = name
-        self.function = None
+        self.function = 0
         self.epochs = params[0]
         self.activationFunction=activationFunction
         self.samplePoints = params[1]
@@ -16,25 +16,30 @@ class Approximator_NN_ND(ApproximatorND):
         self.nn_general = None
         self.criterion = None
         self.optimizer = None
+        self.input_dim=None
+        self.output_dim = None
         self.criterion = lossCriterium
         self.epochSum = 0
 
-    def generate_random_data(self, function:FunctionND, samplePoints):
-        input_dim = function.inputDim
-        x_start = function.inDomainStart
-        x_end = function.inDomainEnd
+    def generate_random_data(self, samplePoints:int):
+        print(f"[DEBUG] function: {self.function}, type: {type(self.function)}")
+        print(f"[DEBUG] function.__dict__: {self.function.__dict__ if hasattr(self.function, '__dict__') else 'no __dict__'}")
+
+        self.input_dim = self.function.inputDim
+        x_start = self.function.inDomainStart
+        x_end = self.function.inDomainEnd
 
         # Zufällige Punkte im Eingaberaum
-        X = np.random.uniform(low=x_start, high=x_end, size=(samplePoints, input_dim))
-        Y = function.evaluate(X)  # Erwartet: (samplePoints, outputDim)
+        X = np.random.uniform(low=x_start, high=x_end, size=(self.samplePoints, self.input_dim))
+        Y = self.function.evaluate(X)  # Erwartet: (samplePoints, outputDim)
         return X, Y
 
     def train(self, function):
         self.function = function
-        input_dim = function.inputDim
-        output_dim = function.outputDim
+        input_dim = self.function.inputDim
+        output_dim = self.function.outputDim
 
-        X, Y = self.generate_random_data(function, self.samplePoints)
+        X, Y = self.generate_random_data(self.samplePoints)
 
         input_tensor = torch.tensor(X, dtype=torch.float32)
 

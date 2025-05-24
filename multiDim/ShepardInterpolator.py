@@ -1,5 +1,6 @@
 import numpy as np
 from multiDim.ApproximatorND import ApproximatorND
+from multiDim.FunctionND import FunctionND
 class ShepardInterpolator(ApproximatorND):
     
     def __init__(self, params, numPoints,power=2,name = "ShepardInterpolator_multi_dim"):
@@ -11,12 +12,14 @@ class ShepardInterpolator(ApproximatorND):
         self.inputDim = 0
         self.outputDim = 0
 
-    def train(self, function):
+    def train(self, function:FunctionND):
         self.inputDim = function.inputDim
         self.outputDim = function.outputDim
-        self.dataPoints = np.random.uniform(function.inDomainStart, function.inDomainEnd, size=(self.numPoints, self.inputDim))
+        low = np.array(function.inDomainStart)
+        high = np.array(function.inDomainEnd)
+        self.dataPoints = np.random.uniform(low, high, size=(self.numPoints, self.inputDim))
         values = function.evaluate(self.dataPoints)
-        self.values = np.asarray(values)  # sollte shape (numPoints, outputDim) haben
+        self.values = np.atleast_2d(values).T  # macht aus (1000,) ein (1000,1) Array
 
     def predict(self, input):
         query_points = np.asarray(input)  # shape (numQueryPoints, inputDim)
@@ -33,6 +36,7 @@ class ShepardInterpolator(ApproximatorND):
             else:
                 # Gewichtete Summe für jede Output-Dimension separat
                 weighted_sum = np.sum(weights[:, np.newaxis] * self.values, axis=0)
+                
                 sum_weights = np.sum(weights)
                 interpolated_values[i, :] = weighted_sum / sum_weights
 

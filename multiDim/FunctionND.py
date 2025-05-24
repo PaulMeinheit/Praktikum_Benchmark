@@ -1,12 +1,10 @@
 
 
 class FunctionND:
-    def __init__(self, name, inputDim,outputDim,inDomainStart,inDomainEnd,outDomainStart,outDomainEnd):
+    def __init__(self, name, inputDim,outputDim,inDomainStart,inDomainEnd):
         self.name = name
         self.inDomainStart = inDomainStart
         self.inDomainEnd = inDomainEnd
-        self.outDomainStart = outDomainStart
-        self.outDomainEnd = outDomainEnd
         self.inputDim = inputDim
         self.outputDim = outputDim
         

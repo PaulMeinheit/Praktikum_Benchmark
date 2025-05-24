@@ -3,11 +3,64 @@ import matplotlib.pyplot as plt
 import torch
 from sklearn.linear_model import LinearRegression
 from concurrent.futures import ProcessPoolExecutor
+from multiDim.Approximator_NN_ND import Approximator_NN_ND
 import copy
 import time
 import os
 from itertools import combinations
 from sklearn.decomposition import PCA
+
+def _train_nn_with_epochs(args):
+        """
+        Hilfsfunktion für paralleles Training:
+        args = (epochs, sample_points, nodes_per_layer, activation_function, loss_fn_class, function_data)
+        """
+        epochs, sample_points, nodes_per_layer, activation_function, loss_fn_class, function_class, function_args = args
+
+        # Instanz der Funktion wiederherstellen
+        function = function_class(*function_args)
+
+        # Loss-Funktion erzeugen
+        loss_fn = loss_fn_class()
+
+        # Approximator Instanz erzeugen
+        nn_approx = Approximator_NN_ND(
+            name=f"NN_{epochs}_epochs",
+            params=[epochs, sample_points, nodes_per_layer],
+            activationFunction=activation_function,
+            lossCriterium=loss_fn
+        )
+
+        nn_approx.train(function)
+
+        # Input-Raster anlegen (einfach 1D Raster, andere Dims mit Mittelwert)
+        input_dim = function.inputDim
+        grid_resolution = 1000
+        x_grid = []
+        for i in range(input_dim):
+            x_vals = np.linspace(function.inDomainStart[i], function.inDomainEnd[i], grid_resolution)
+            x_grid.append(x_vals)
+
+        if input_dim == 1:
+            X_grid = x_grid[0].reshape(-1,1)
+        elif input_dim == 2:
+            X1, X2 = np.meshgrid(x_grid[0], x_grid[1])
+            X_grid = np.vstack([X1.ravel(), X2.ravel()]).T
+        else:
+            # Andere Dimensionen Mittelwert
+            mean_vals = np.mean(np.random.uniform(function.inDomainStart, function.inDomainEnd, size=(1000, input_dim)), axis=0)
+            base_grid = np.tile(mean_vals, (grid_resolution, 1))
+            base_grid[:, 0] = x_grid[0]
+            X_grid = base_grid
+
+        Y_pred = nn_approx.predict(X_grid)
+        Y_true = function.evaluate(X_grid)
+
+        mse = np.mean((Y_true - Y_pred) ** 2)
+        max_norm = np.max(np.abs(Y_true - Y_pred))
+
+        return (epochs, mse, max_norm, nn_approx)
+
 
 def save_plot(fig, filename, save_dir="plots"):
     os.makedirs(save_dir, exist_ok=True)
@@ -48,15 +101,19 @@ class Experiment_ND:
     def train(self):
         input_dim = self.function.inputDim
         output_dim = self.function.outputDim
-        self.X = np.random.uniform(self.function.inDomainStart, self.function.inDomainEnd, size=(1000, input_dim))
+        low = np.array(self.function.inDomainStart)
+        high = np.array(self.function.inDomainEnd)
+        
+        self.X = np.random.uniform(low, high, size=(1000, input_dim))
         self.Y_true = self.function.evaluate(self.X)
-
+        
         if self.parallel:
+            [name, inputDim, outputDim,inDomainStart, inDomainEnd] = (self.function.name,self.function.inputDim,self.function.outputDim,self.function.inDomainStart,self.function.inDomainEnd)
             data = [
-                (copy.deepcopy(apx), self.function.__class__, list(self.function.__dict__.values()),
-                 self.X, self.Y_true, self.loss_fn)
+                (copy.deepcopy(apx), self.function.__class__, [name, inputDim, outputDim,inDomainStart, inDomainEnd],self.X, self.Y_true, self.loss_fn)
                 for apx in self.approximators
             ]
+
             with ProcessPoolExecutor() as executor:
                 results_raw = list(executor.map(train_and_predict, data))
         else:
@@ -106,9 +163,7 @@ class Experiment_ND:
         for res in self.results:
             print(f"{res['name']}: Loss = {res['loss']:.6f}")
 
-
-
-    def plot_1d_slices(self, resolution=200):
+    def plot_1d_slices(self, resolution=2000):
         if self.X is None:
             raise ValueError("You must call train() before plotting.")
 
@@ -142,7 +197,7 @@ class Experiment_ND:
             plt.tight_layout()
             save_plot(fig, f"{name}_1d_slices.svg")
 
-    def plot_pca_querschnitt_all_outputs(self, n_points=200, n_cols=4, save_dir="plots"):
+    def plot_pca_querschnitt_all_outputs(self, n_points=2000, n_cols=4, save_dir="plots"):
         X = self.X
         Y_true = self.Y_true
         output_dim = Y_true.shape[1] if Y_true.ndim > 1 else 1
@@ -209,94 +264,39 @@ class Experiment_ND:
         plt.tight_layout(rect=[0, 0, 1, 0.95])
         save_plot(fig, f"{self.name}_pca_querschnitt_all_outputs.svg", save_dir)
 
+    def plot_norms_vs_epochs(self, epoch_list, sample_points, nodes_per_layer, activation_function=None, loss_fn_class=torch.nn.MSELoss, save_dir="plots"):
+        if activation_function is None:
+            activation_function = torch.nn.ReLU()
 
+        function_class = self.function.__class__
+        function_args = [self.function.name, self.function.inputDim, self.function.outputDim,
+                        self.function.inDomainStart, self.function.inDomainEnd]
 
+        # Daten für parallele Verarbeitung vorbereiten
+        args_list = [
+            (epochs, sample_points, nodes_per_layer, activation_function, loss_fn_class, function_class, function_args)
+            for epochs in epoch_list
+        ]
 
+        with ProcessPoolExecutor() as executor:
+            results = list(executor.map(_train_nn_with_epochs, args_list))
 
+        # Sortieren nach Epochenzahl (falls durcheinander)
+        results.sort(key=lambda x: x[0])
 
+        epochs_sorted = [r[0] for r in results]
+        mse_losses = [r[1] for r in results]
+        maxnorm_losses = [r[2] for r in results]
 
+        # Plot erzeugen
+        fig, ax = plt.subplots(figsize=(8,5))
+        ax.plot(epochs_sorted, mse_losses, label="MSE Loss", marker='o')
+        ax.plot(epochs_sorted, maxnorm_losses, label="Max Norm Loss", marker='s')
+        ax.set_xlabel("Epochenzahl")
+        ax.set_ylabel("Fehler")
+        ax.set_title(f"Fehler vs. Epochenzahl für NN Approximator\n({self.name})")
+        ax.grid(True)
+        ax.legend()
+        plt.tight_layout()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#nicht mehr relevant 
-
-    def plot_best_and_worst_2d_projections(self):
-        input_dims = [0, 1]
-        x = self.X[:, input_dims[0]]
-        y = self.X[:, input_dims[1]]
-
-        grid_x, grid_y = np.meshgrid(
-            np.linspace(x.min(), x.max(), 100),
-            np.linspace(y.min(), y.max(), 100)
-        )
-        grid_points = np.vstack([grid_x.ravel(), grid_y.ravel()]).T
-
-        for res in self.results:
-            Y_pred = np.atleast_2d(res['Y_pred'])
-            Y_true = np.atleast_2d(self.Y_true)
-            name = res['name']
-            loss = res['loss']
-            model = res['model']
-
-            if Y_pred.shape[0] == 1 and Y_pred.shape[1] != self.function.outputDim:
-                Y_pred = Y_pred.T
-            if Y_true.shape[0] == 1 and Y_true.shape[1] != self.function.outputDim:
-                Y_true = Y_true.T
-
-            output_dim = Y_pred.shape[1]
-            mse_per_output = np.mean((Y_pred - Y_true) ** 2, axis=0)
-
-            n_plot_dims = min(4, output_dim)
-            best_dims = np.argsort(mse_per_output)[:n_plot_dims]
-            worst_dims = np.argsort(mse_per_output)[-n_plot_dims:]
-
-            fig, axs = plt.subplots(2, 2 * n_plot_dims, figsize=(6 * n_plot_dims, 10))
-            fig.suptitle(f"{name} – Beste/Schlechteste 2D-Projektionen", fontsize=16)
-
-            def plot(ax_pred, ax_true, out_dim, label):
-                input_full = np.zeros((grid_points.shape[0], self.function.inputDim))
-                for i_dim in range(self.function.inputDim):
-                    if i_dim in input_dims:
-                        idx = input_dims.index(i_dim)
-                        input_full[:, i_dim] = grid_points[:, idx]
-                    else:
-                        input_full[:, i_dim] = np.mean(self.X[:, i_dim])
-
-                pred = np.atleast_2d(model.predict(input_full))
-                if pred.shape[0] == 1 and pred.shape[1] != output_dim:
-                    pred = pred.T
-                Z_pred = pred[:, out_dim].reshape(grid_x.shape)
-
-                true = np.atleast_2d(self.function.evaluate(input_full))
-                if true.shape[0] == 1 and true.shape[1] != output_dim:
-                    true = true.T
-                Z_true = true[:, out_dim].reshape(grid_x.shape)
-
-                im1 = ax_pred.imshow(Z_pred, extent=(x.min(), x.max(), y.min(), y.max()), origin='lower')
-                ax_pred.set_title(f"Pred dim {out_dim} ({label})\nMSE={mse_per_output[out_dim]:.4f}")
-                fig.colorbar(im1, ax=ax_pred)
-
-                im2 = ax_true.imshow(Z_true, extent=(x.min(), x.max(), y.min(), y.max()), origin='lower')
-                ax_true.set_title(f"True dim {out_dim} ({label})")
-                fig.colorbar(im2, ax=ax_true)
-
-            for i, dim in enumerate(best_dims):
-                plot(axs[0, 2 * i], axs[0, 2 * i + 1], dim, "Best")
-            for i, dim in enumerate(worst_dims):
-                plot(axs[1, 2 * i], axs[1, 2 * i + 1], dim, "Worst")
-
-            plt.tight_layout(rect=[0, 0, 1, 0.95])
-            save_plot(fig, f"{name}_best_worst_heatmaps.svg")
+        save_plot(fig, f"{self.name}_error_vs_epochs_parallel.svg", save_dir)
