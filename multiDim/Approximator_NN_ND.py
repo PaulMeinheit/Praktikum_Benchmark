@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-class NN_Approximator(ApproximatorND):
+class Approximator_NN_ND(ApproximatorND):
     def __init__(self, name, params,activationFunction=nn.ReLU(),lossCriterium=nn.MSELoss()):
         self.name = name
         self.function = None
@@ -19,10 +19,10 @@ class NN_Approximator(ApproximatorND):
         self.criterion = lossCriterium
         self.epochSum = 0
 
-    def generate_random_data(self, function, samplePoints):
+    def generate_random_data(self, function:FunctionND, samplePoints):
         input_dim = function.inputDim
-        x_start = function.domainstart
-        x_end = function.domainend
+        x_start = function.inDomainStart
+        x_end = function.inDomainEnd
 
         # Zufällige Punkte im Eingaberaum
         X = np.random.uniform(low=x_start, high=x_end, size=(samplePoints, input_dim))
@@ -37,11 +37,13 @@ class NN_Approximator(ApproximatorND):
         X, Y = self.generate_random_data(function, self.samplePoints)
 
         input_tensor = torch.tensor(X, dtype=torch.float32)
+
+        Y = np.array(Y)
+        if Y.ndim == 1:
+            Y = Y[:, np.newaxis]  # shape (n,) -> (n, 1)
         target_tensor = torch.tensor(Y, dtype=torch.float32)
 
-        
         self.nn_general = NN_General(input_dim, output_dim, self.nodesPerLayer,self.activationFunction)
-        
         self.optimizer = optim.Adam(self.nn_general.parameters(), lr=0.01)
 
         for epoch in range(self.epochs):

@@ -1,8 +1,8 @@
 import numpy as np
 from .FunctionND import FunctionND
 
-class Function_Sin_4D(FunctionND):
-    def __init__(self, name,inDomainStart,inDomainEnd,inputDim=4,outputDim=1):
+class Function_Sin_2D(FunctionND):
+    def __init__(self, name,inDomainStart,inDomainEnd,inputDim=2,outputDim=1):
         self.name = name
         self.inDomainStart = inDomainStart
         self.inDomainEnd = inDomainEnd
@@ -18,7 +18,5 @@ class Function_Sin_4D(FunctionND):
         """
         x = inputs[:, 0]
         y = inputs[:, 1]
-        z = inputs[:, 2]
-        u = inputs[:, 3]
         
-        return np.sin(x) * np.sin(y) * np.sin(z) * np.sin(u)
+        return np.sin(x) * np.sin(y)
