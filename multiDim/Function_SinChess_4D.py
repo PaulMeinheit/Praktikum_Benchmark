@@ -2,7 +2,7 @@ import numpy as np
 from .FunctionND import FunctionND
 
 class Function_Sin_4D(FunctionND):
-    def __init__(self, name,inDomainStart,inDomainEnd,inputDim=4,outputDim=1):
+    def __init__(self, name="Sinus-4D",inputDim=4,outputDim=1,inDomainStart=[0,0,0,0],inDomainEnd=[2*np.pi,2*np.pi,2*np.pi,2*np.pi]):
         self.name = name
         self.inDomainStart = inDomainStart
         self.inDomainEnd = inDomainEnd
@@ -21,4 +21,4 @@ class Function_Sin_4D(FunctionND):
         z = inputs[:, 2]
         u = inputs[:, 3]
         
-        return np.sin(x) * np.sin(y) * np.sin(z) * np.sin(u)
+        return np.sin(4*x) * np.sin(4*y) * np.sin(4*z) * np.sin(4*u)

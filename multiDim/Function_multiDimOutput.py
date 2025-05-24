@@ -2,7 +2,7 @@ import numpy as np
 from .FunctionND import FunctionND
 
 class Function_MultiDimOutput(FunctionND):
-    def __init__(self, name = "Multi-Dim-Function", inDomainStart=[-4,-4], inDomainEnd=[4,4], inputDim=2, outputDim=2):
+    def __init__(self, name = "Multi-Dim-Function", inputDim=2, outputDim=2,inDomainStart=[-4,-4], inDomainEnd=[4,4]):
         self.name = name
         self.inDomainStart = inDomainStart
         self.inDomainEnd = inDomainEnd

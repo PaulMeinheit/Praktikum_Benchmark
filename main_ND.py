@@ -21,7 +21,9 @@ def getApprox():
 def getFunc():
     function_multiDim=Function_MultiDimOutput()
     function_sin_2D = Function_Sin_2D("Sinus-2D",2,1,[0,0],[2*np.pi,2*np.pi])
-    return function_multiDim 
+    function_sin_4D = Function_Sin_4D()
+
+    return function_sin_4D 
 
 
 exp = Experiment_ND("Test",[],getFunc())

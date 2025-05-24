@@ -22,9 +22,6 @@ class Approximator_NN_ND(ApproximatorND):
         self.epochSum = 0
 
     def generate_random_data(self, samplePoints:int):
-        print(f"[DEBUG] function: {self.function}, type: {type(self.function)}")
-        print(f"[DEBUG] function.__dict__: {self.function.__dict__ if hasattr(self.function, '__dict__') else 'no __dict__'}")
-
         self.input_dim = self.function.inputDim
         x_start = self.function.inDomainStart
         x_end = self.function.inDomainEnd
