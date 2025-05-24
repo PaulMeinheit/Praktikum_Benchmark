@@ -35,7 +35,7 @@ class ShepardInterpolator(ApproximatorND):
                 interpolated_values[i, :] = self.values[np.argmin(dists)]
             else:
                 # Gewichtete Summe für jede Output-Dimension separat
-                weighted_sum = np.sum(weights[:, np.newaxis] * self.values, axis=0)
+                weighted_sum = np.sum(weights[:, np.newaxis] * self.values.T, axis=0)
                 
                 sum_weights = np.sum(weights)
                 interpolated_values[i, :] = weighted_sum / sum_weights
