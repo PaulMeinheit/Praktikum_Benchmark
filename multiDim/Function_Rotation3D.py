@@ -10,9 +10,9 @@ class Function_Rotation3D(FunctionND):
         self.inputDim = inputDim
         self.outputDim = outputDim
         
-        
+        rot_axis = [0, 0, 1]
         # Normalisiere die Rotationsachse auf Einheitsvektor
-        self.rotation_axis =np.array([0, 0, 1]) / np.linalg.norm(np.array([0, 0, 1]))
+        self.rotation_axis =np.array(rot_axis) / np.linalg.norm(np.array(rot_axis))
 
     def evaluate(self, inputs: np.ndarray) -> np.ndarray:
         """

@@ -9,6 +9,7 @@ import time
 import os
 from itertools import combinations
 from sklearn.decomposition import PCA
+from mpl_toolkits.mplot3d import Axes3D 
 
 def _train_nn_with_epochs(args):
         """
@@ -75,15 +76,27 @@ def to_tensor_2d(array):
         arr = arr[:, np.newaxis]
     return torch.tensor(arr, dtype=torch.float32)
 
-def train_and_predict(approximator_data):
-    approximator, function_class, function_args, X, Y_true, loss_fn = approximator_data
-    approximator = copy.deepcopy(approximator)
-    function = function_class(*function_args)
-    approximator.train(function)
-    Y_pred = approximator.predict(X)
+def train_and_predict(args):
+    # Wrapper Funktion für paralleles Training
+    apx, func_class, func_params, X, Y_true, loss_fn = args
+    # Reinitialisiere die Funktion, falls nötig
+    function = func_class(*func_params)
+    
+    # Trainiere den Approximator auf der Funktion
+    apx.train(function)
+    
+    # Vorhersage
+    Y_pred = apx.predict(X)
+    Y_pred = np.atleast_2d(Y_pred)
+    output_dim = function.outputDim
+    if Y_pred.shape[0] == 1 and Y_pred.shape[1] != output_dim:
+        Y_pred = Y_pred.T
+    
+    # Verlust berechnen
     loss = loss_fn(to_tensor_2d(Y_pred), to_tensor_2d(Y_true)).item()
-    return approximator.name, Y_pred, loss, approximator
-
+    
+    # Rückgabe mit dem trainierten Modell (Apprximator)
+    return (apx.name, Y_pred, loss, apx)
 
 class Experiment_ND:
     def __init__(self, name, approximators, function, loss_fn=torch.nn.MSELoss(),
@@ -108,19 +121,25 @@ class Experiment_ND:
         
         self.X = np.random.uniform(low, high, size=(1000, input_dim))
         self.Y_true = self.function.evaluate(self.X)
-        
+
         if self.parallel:
-            [name, inputDim, outputDim,inDomainStart, inDomainEnd] = (self.function.name,self.function.inputDim,self.function.outputDim,self.function.inDomainStart,self.function.inDomainEnd)
+            # Daten für paralleles Training vorbereiten
+            func_params = (self.function.name, input_dim, output_dim, self.function.inDomainStart, self.function.inDomainEnd)
             data = [
-                (copy.deepcopy(apx), self.function.__class__, [name, inputDim, outputDim,inDomainStart, inDomainEnd],self.X, self.Y_true, self.loss_fn)
+                (copy.deepcopy(apx), self.function.__class__, func_params, self.X, self.Y_true, self.loss_fn)
                 for apx in self.approximators
             ]
-
+            
             with ProcessPoolExecutor() as executor:
                 results_raw = list(executor.map(train_and_predict, data))
+            
+            # Update Approximatoren in-place mit trainierten Modellen
+            for i, (_, _, _, trained_model) in enumerate(results_raw):
+                self.approximators[i] = trained_model
+                
         else:
             results_raw = []
-            for apx in self.approximators:
+            for i, apx in enumerate(self.approximators):
                 start = time.time()
                 apx.train(self.function)
                 Y_pred = apx.predict(self.X)
@@ -130,7 +149,8 @@ class Experiment_ND:
                 loss = self.loss_fn(to_tensor_2d(Y_pred), to_tensor_2d(self.Y_true)).item()
                 results_raw.append((apx.name, Y_pred, loss, apx))
                 print(f"✅ {apx.name} trained in {time.time() - start:.2f}s")
-
+        
+        # Ergebnisliste speichern
         self.results = [{
             'name': name,
             'Y_pred': Y_pred,
@@ -307,10 +327,60 @@ class Experiment_ND:
         ax.plot(epochs_sorted, mse_losses, label="MSE Loss", marker='o')
         ax.plot(epochs_sorted, maxnorm_losses, label="Max Norm Loss", marker='s')
         ax.set_xlabel("Epochenzahl")
-        ax.set_ylabel(_label("Fehler"))
+        ax.set_ylabel(self._label("Fehler"))
         ax.set_title(f"Fehler vs. Epochenzahl für NN Approximator\n({self.name})")
         ax.grid(True)
         ax.legend()
         plt.tight_layout()
 
         save_plot(fig, f"{self.name}_error_vs_epochs_parallel.svg", save_dir)
+
+    def plot_vector_fields_3D_all(self, names=None, n_per_axis=7, scale=0.1):
+        """
+        Plottet das 3D-Vektorfeld für alle Approximatoren, wenn inputDim=3 und outputDim=3.
+        
+        Parameters:
+        - names: Optional, Liste von Namen für die Plots
+        - n_per_axis: Auflösung des Rasters
+        - scale: Pfeillänge im Plot
+        """
+        
+        if not self.approximators:
+            print("⚠️ Keine Approximatoren übergeben.")
+            return
+
+        # Vorabprüfung: Alle Approximatoren müssen inputDim=3 und outputDim=3 haben
+        for approximator in self.approximators:
+            if getattr(approximator, "inputDim", None) != 3 or getattr(approximator, "outputDim", None) != 3:
+                print(f"⚠️ Approximator '{approximator.name}' hat nicht die Dimension 3→3. Überspringe Plot.")
+                return  # alternativ: continue für partielles Plotten
+
+        # Raster erzeugen
+        x = np.linspace(-1, 1, n_per_axis)
+        y = np.linspace(-1, 1, n_per_axis)
+        z = np.linspace(-1, 1, n_per_axis)
+        X, Y, Z = np.meshgrid(x, y, z)
+        grid_points = np.stack([X.ravel(), Y.ravel(), Z.ravel()], axis=1)
+
+        num_models = len(self.approximators)
+        fig = plt.figure(figsize=(6 * num_models, 6))
+
+        for i, approximator in enumerate(self.approximators):
+            vectors = approximator.predict(grid_points)  # (N, 3)
+            U = vectors[:, 0].reshape(X.shape)
+            V = vectors[:, 1].reshape(Y.shape)
+            W = vectors[:, 2].reshape(Z.shape)
+
+            ax = fig.add_subplot(1, num_models, i + 1, projection='3d')
+            ax.quiver(X, Y, Z, U, V, W, length=scale, normalize=True, color='blue')
+            ax.set_xlabel("x")
+            ax.set_ylabel("y")
+            ax.set_zlabel("z")
+            title = names[i] if names and i < len(names) else getattr(approximator, "name", f"Model {i+1}")
+            ax.set_title(title)
+
+        fig.suptitle("3D-Vektorfelder der Approximatoren", fontsize=16, y=1.02)
+        plt.tight_layout()
+        plt.show()
+        # Datei speichern
+        save_plot(fig, "vector_fields_3D_all.svg")

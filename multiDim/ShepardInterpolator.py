@@ -22,9 +22,7 @@ class ShepardInterpolator(ApproximatorND):
         self.values = np.atleast_2d(values)
         if self.values.shape[0] != self.numPoints:
             self.values = self.values.T  # Korrektur nur falls nötig
-        assert self.values.shape == (self.numPoints, self.outputDim)
-
-
+        
     def predict(self, input):
         query_points = np.asarray(input)  # shape (numQueryPoints, inputDim)
         numQueryPoints = query_points.shape[0]

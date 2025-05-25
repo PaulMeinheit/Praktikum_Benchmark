@@ -12,13 +12,13 @@ import torch
 
 
 def getApprox():
-    approx_nn_nd = Approximator_NN_ND("NN 4-4-4 E:2k",[2000,10000,[4,4,4]])
+    approx_nn_nd = Approximator_NN_ND("NN 4-4-4 E:2k",[2000,1000,[4,4,4]])
     approx_nn_nd2 = Approximator_NN_ND("NN 16-16 E:6k",[1000,10000,[16,16]])
     
     
     approx_shepard = ShepardInterpolator([],10000)
     approx_identity = Approximator_Identity_ND([])
-    apprx = [approx_shepard]
+    apprx = [approx_identity,approx_shepard,approx_nn_nd]
     return apprx
 
 def getFunc():
@@ -26,16 +26,17 @@ def getFunc():
     function_multiDim=Function_MultiDimOutput()
     function_sin_2D = Function_Sin_2D()
     function_sin_4D = Function_Sin_4D()
-    return function_multiDim 
+    return function_rotation 
 
 epochs = np.arange(1,20000,1000)
 #loss_vs_epochs = Experiment_ND("Test",[],getFunc(),logscale=True)
 #loss_vs_epochs.plot_norms_vs_epochs(epochs,500,[16,16,16])
 
-exp = Experiment_ND("Test",getApprox(),getFunc(),logscale=False)
+exp = Experiment_ND("Test",getApprox(),getFunc(),parallel=True,logscale=False)
 
 
 exp.train()
 exp.print_loss_summary()
 exp.plot_1d_slices()
 exp.plot_pca_querschnitt_all_outputs()
+exp.plot_vector_fields_3D_all()

@@ -33,8 +33,8 @@ class Approximator_NN_ND(ApproximatorND):
 
     def train(self, function):
         self.function = function
-        input_dim = self.function.inputDim
-        output_dim = self.function.outputDim
+        self.input_dim = self.function.inputDim
+        self.output_dim = self.function.outputDim
 
         X, Y = self.generate_random_data(self.samplePoints)
 
@@ -45,7 +45,7 @@ class Approximator_NN_ND(ApproximatorND):
             Y = Y[:, np.newaxis]  # shape (n,) -> (n, 1)
         target_tensor = torch.tensor(Y, dtype=torch.float32)
 
-        self.nn_general = NN_General(input_dim, output_dim, self.nodesPerLayer,self.activationFunction)
+        self.nn_general = NN_General(self.input_dim, self.output_dim, self.nodesPerLayer,self.activationFunction)
         self.optimizer = optim.Adam(self.nn_general.parameters(), lr=0.01)
 
         for epoch in range(self.epochs):
