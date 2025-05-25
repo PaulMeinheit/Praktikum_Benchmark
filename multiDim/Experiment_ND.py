@@ -10,6 +10,37 @@ import os
 from itertools import combinations
 from sklearn.decomposition import PCA
 from mpl_toolkits.mplot3d import Axes3D 
+import seaborn as sns
+
+
+
+def timed_train_wrapper(args):
+    (epochs, sample_points,
+     nodes_per_layer,
+     activation_function,
+     loss_fn_class,
+     function_class,
+     function_args,
+     validation_points,
+     sampling_method,
+     mse_threshold) = args
+
+    start_time = time.time()
+
+    # dein train function call
+    _, mse, _, _ = _train_nn_with_epochs(
+        (epochs, sample_points, nodes_per_layer,
+         activation_function, loss_fn_class,
+         function_class, function_args,
+         validation_points, sampling_method)
+    )
+
+    elapsed = time.time() - start_time
+    if mse > mse_threshold:
+        elapsed = float('nan')  # unerfolgreiche Trainings
+
+    return (epochs, sample_points, elapsed)
+
 
 def _train_nn_with_epochs(args):
     """
@@ -395,3 +426,52 @@ class Experiment_ND:
         plt.show()
         # Datei speichern
         save_plot(fig, "vector_fields_3D_all.svg")
+
+    # 🆕 Heatmap für Trainingszeiten vs. Epochs/Sample Points
+    def plot_training_time_heatmap_random_sampling(self,save_name,function, activation_function,loss_fn_class,
+        epochs_range, sample_points_range,
+        nodes_per_layer=[8,8,8],
+        n_random_samples=100,
+        mse_threshold=1e-6,
+        sampling_method="random"):
+
+        # 🆕 Grid aus möglichen Kombinationen
+        epochs_vals = np.linspace(*epochs_range, num=n_random_samples, dtype=int)
+        sample_vals = np.linspace(*sample_points_range, num=n_random_samples, dtype=int)
+        all_combinations = [(e, s) for e in epochs_vals for s in sample_vals]
+        np.random.shuffle(all_combinations)
+        chosen_combinations = all_combinations[:n_random_samples]
+
+        function_class = function.__class__
+        function_args = [function.name, function.inputDim, function.outputDim, function.inDomainStart, function.inDomainEnd]
+
+        args_list = [(e, s, nodes_per_layer, activation_function, loss_fn_class,
+            function_class, function_args, 10000, sampling_method, mse_threshold)
+            for e, s in chosen_combinations
+        ]
+
+        with ProcessPoolExecutor() as executor:
+            results = list(executor.map(timed_train_wrapper, args_list))
+
+        #  Ergebnisse in Matrixform bringen
+        heatmap_data = {}
+        for epochs, samples, t in results:
+            heatmap_data[(epochs, samples)] = t
+
+        #  In 2D Grid umwandeln
+        heatmap = np.full((len(epochs_vals), len(sample_vals)), np.nan)
+        for i, e in enumerate(epochs_vals):
+            for j, s in enumerate(sample_vals):
+                heatmap[i, j] = heatmap_data.get((e, s), np.nan)
+
+        #  Heatmap plotten
+        fig, ax = plt.subplots(figsize=(10, 8))
+        sns.heatmap(heatmap, xticklabels=sample_vals, yticklabels=epochs_vals,
+                    cmap="viridis", ax=ax, cbar_kws={'label': 'Trainingszeit (s)'},
+                    mask=np.isnan(heatmap))
+
+        ax.set_xlabel("Sample Points")
+        ax.set_ylabel("Epochen")
+        ax.set_title(f"Trainingszeit Heatmap (MSE ≤ {mse_threshold})")
+
+        save_plot(fig, save_name)
