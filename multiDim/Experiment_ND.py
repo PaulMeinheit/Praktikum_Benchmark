@@ -12,56 +12,66 @@ from sklearn.decomposition import PCA
 from mpl_toolkits.mplot3d import Axes3D 
 
 def _train_nn_with_epochs(args):
-        """
-        Hilfsfunktion für paralleles Training:
-        args = (epochs, sample_points, nodes_per_layer, activation_function, loss_fn_class, function_data)
-        """
-        epochs, sample_points, nodes_per_layer, activation_function, loss_fn_class, function_class, function_args = args
+    """
+    Hilfsfunktion für paralleles Training:
+    args = (epochs, sample_points, nodes_per_layer, activation_function, loss_fn_class, function_class, function_args,
+            n_test_points, sampling_method)
+    """
+    (
+        epochs, sample_points, nodes_per_layer, activation_function, 
+        loss_fn_class, function_class, function_args,
+        n_test_points, sampling_method
+    ) = args
 
-        # Instanz der Funktion wiederherstellen
-        function = function_class(*function_args)
+    # Instanz der Funktion
+    function = function_class(*function_args)
+    loss_fn = loss_fn_class()
 
-        # Loss-Funktion erzeugen
-        loss_fn = loss_fn_class()
+    nn_approx = Approximator_NN_ND(
+        name=f"NN_{epochs}_epochs",
+        params=[epochs, sample_points, nodes_per_layer],
+        activationFunction=activation_function,
+        lossCriterium=loss_fn
+    )
 
-        # Approximator Instanz erzeugen
-        nn_approx = Approximator_NN_ND(
-            name=f"NN_{epochs}_epochs",
-            params=[epochs, sample_points, nodes_per_layer],
-            activationFunction=activation_function,
-            lossCriterium=loss_fn
-        )
+    nn_approx.train(function)
 
-        nn_approx.train(function)
+    input_dim = function.inputDim
+    domain_start = np.array(function.inDomainStart)
+    domain_end = np.array(function.inDomainEnd)
 
-        # Input-Raster anlegen (einfach 1D Raster, andere Dims mit Mittelwert)
-        input_dim = function.inputDim
-        grid_resolution = 1000
-        x_grid = []
-        for i in range(input_dim):
-            x_vals = np.linspace(function.inDomainStart[i], function.inDomainEnd[i], grid_resolution)
-            x_grid.append(x_vals)
+    # === Punkt-Generator ===
+    if sampling_method == "random":
+        X_test = np.random.uniform(domain_start, domain_end, size=(n_test_points, input_dim))
 
-        if input_dim == 1:
-            X_grid = x_grid[0].reshape(-1,1)
-        elif input_dim == 2:
-            X1, X2 = np.meshgrid(x_grid[0], x_grid[1])
-            X_grid = np.vstack([X1.ravel(), X2.ravel()]).T
-        else:
-            # Andere Dimensionen Mittelwert
-            mean_vals = np.mean(np.random.uniform(function.inDomainStart, function.inDomainEnd, size=(1000, input_dim)), axis=0)
-            base_grid = np.tile(mean_vals, (grid_resolution, 1))
-            base_grid[:, 0] = x_grid[0]
-            X_grid = base_grid
+    elif sampling_method == "grid":
+        # Berechne Grid-Auflösung pro Dimension
+        points_per_dim = int(np.ceil(n_test_points ** (1 / input_dim)))
+        linspaces = [
+            np.linspace(domain_start[i], domain_end[i], points_per_dim)
+            for i in range(input_dim)
+        ]
+        mesh = np.meshgrid(*linspaces, indexing='ij')  # shape: (dim1, dim2, ..., dimD)
+        X_test = np.stack(mesh, axis=-1).reshape(-1, input_dim)
+        if X_test.shape[0] > n_test_points:
+            X_test = X_test[:n_test_points]  # trimmen falls zu viele Punkte
+    else:
+        raise ValueError(f"Unknown sampling method: {sampling_method}")
 
-        Y_pred = nn_approx.predict(X_grid)
-        Y_true = function.evaluate(X_grid)
+    # === Vorhersage und Fehlerberechnung ===
+    Y_pred = nn_approx.predict(X_test)
+    Y_true = function.evaluate(X_test)
 
-        mse = np.mean((Y_true - Y_pred) ** 2)
-        max_norm = np.max(np.abs(Y_true - Y_pred))
+    if Y_pred.shape != Y_true.shape:
+        try:
+            Y_pred = Y_pred.reshape(Y_true.shape)
+        except:
+            raise ValueError(f"Shape mismatch: Y_pred shape {Y_pred.shape}, Y_true shape {Y_true.shape}")
 
-        return (epochs, mse, max_norm, nn_approx)
+    mse = np.mean((Y_true - Y_pred) ** 2)
+    max_norm = np.max(np.abs(Y_true - Y_pred))
 
+    return (epochs, mse, max_norm, nn_approx)
 
 def save_plot(fig, filename, save_dir="plots"):
     os.makedirs(save_dir, exist_ok=True)
@@ -308,7 +318,7 @@ class Experiment_ND:
 
         # Daten für parallele Verarbeitung vorbereiten
         args_list = [
-            (epochs, sample_points, nodes_per_layer, activation_function, loss_fn_class, function_class, function_args)
+            (epochs, sample_points, nodes_per_layer, activation_function, loss_fn_class, function_class, function_args,100000,"random")
             for epochs in epoch_list
         ]
 
@@ -335,7 +345,7 @@ class Experiment_ND:
 
         save_plot(fig, f"{self.name}_error_vs_epochs_parallel.svg", save_dir)
 
-    def plot_vector_fields_3D_all(self, names=None, n_per_axis=7, scale=0.1):
+    def plot_vector_fields_3D_all(self, names=None, n_per_axis=7, scale=0.2):
         """
         Plottet das 3D-Vektorfeld für alle Approximatoren, wenn inputDim=3 und outputDim=3.
         
@@ -351,7 +361,7 @@ class Experiment_ND:
 
         # Vorabprüfung: Alle Approximatoren müssen inputDim=3 und outputDim=3 haben
         for approximator in self.approximators:
-            if getattr(approximator, "inputDim", None) != 3 or getattr(approximator, "outputDim", None) != 3:
+            if self.function.inputDim != 3 or self.function.outputDim != 3:
                 print(f"⚠️ Approximator '{approximator.name}' hat nicht die Dimension 3→3. Überspringe Plot.")
                 return  # alternativ: continue für partielles Plotten
 

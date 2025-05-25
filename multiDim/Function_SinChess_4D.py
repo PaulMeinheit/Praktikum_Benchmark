@@ -21,4 +21,4 @@ class Function_Sin_4D(FunctionND):
         z = inputs[:, 2]
         u = inputs[:, 3]
         
-        return np.sin(4*x) * np.sin(4*y) * np.sin(4*z) * np.sin(4*u)
+        return np.sin(4*x) * np.sin(4*y) * np.sin(4*z) * np.sin(4*u) * 10000

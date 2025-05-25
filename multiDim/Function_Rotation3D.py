@@ -10,7 +10,7 @@ class Function_Rotation3D(FunctionND):
         self.inputDim = inputDim
         self.outputDim = outputDim
         
-        rot_axis = [0, 0, 1]
+        rot_axis = [1, -1, 1]
         # Normalisiere die Rotationsachse auf Einheitsvektor
         self.rotation_axis =np.array(rot_axis) / np.linalg.norm(np.array(rot_axis))
 
