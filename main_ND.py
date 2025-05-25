@@ -8,7 +8,11 @@ from multiDim.Approximator_Identity_ND import Approximator_Identity_ND
 from multiDim.Function_Rotation3D import Function_Rotation3D 
 
 import numpy as np
-import torch
+
+
+def epochs_vs_loss(epochs_list,name,function,nodesPerLayer=[8,8,8],samplePoints=10000,logscale=False):
+    loss_vs_epochs = Experiment_ND(name,[],function,logscale=logscale)
+    loss_vs_epochs.plot_norms_vs_epochs(epochs_list,samplePoints,nodesPerLayer)
 
 
 def getApprox():
@@ -28,10 +32,8 @@ def getFunc():
     function_sin_4D = Function_Sin_4D()
     return function_sin_4D
 
-epochs = np.arange(1,500,30)
-loss_vs_epochs = Experiment_ND("Test",[],getFunc(),logscale=False)
-loss_vs_epochs.plot_norms_vs_epochs(epochs,300,[4,4,4])
-
+epochs = np.arange(1,300,20)
+epochs_vs_loss(epochs,"random_test",getFunc())
 #exp = Experiment_ND("Test",getApprox(),getFunc(),parallel=False,logscale=False)
 
 

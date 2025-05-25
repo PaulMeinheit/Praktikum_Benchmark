@@ -330,8 +330,9 @@ class Experiment_ND:
 
         epochs_sorted = [r[0] for r in results]
         mse_losses = [r[1] for r in results]
+        mse_losses=self._apply_logscale(mse_losses)
         maxnorm_losses = [r[2] for r in results]
-
+        maxnorm_losses=self._apply_logscale(maxnorm_losses)
         # Plot erzeugen
         fig, ax = plt.subplots(figsize=(8,5))
         ax.plot(epochs_sorted, mse_losses, label="MSE Loss", marker='o')
