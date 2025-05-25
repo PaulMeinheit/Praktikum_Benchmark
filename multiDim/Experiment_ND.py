@@ -12,8 +12,6 @@ from sklearn.decomposition import PCA
 from mpl_toolkits.mplot3d import Axes3D 
 import seaborn as sns
 
-
-
 def timed_train_wrapper(args):
     (epochs, sample_points,
      nodes_per_layer,
@@ -22,12 +20,7 @@ def timed_train_wrapper(args):
      function_class,
      function_args,
      validation_points,
-     sampling_method,
-     mse_threshold) = args
-
-    start_time = time.time()
-
-    # dein train function call
+     sampling_method) = args 
     _, mse, _, _ = _train_nn_with_epochs(
         (epochs, sample_points, nodes_per_layer,
          activation_function, loss_fn_class,
@@ -35,11 +28,7 @@ def timed_train_wrapper(args):
          validation_points, sampling_method)
     )
 
-    elapsed = time.time() - start_time
-    if mse > mse_threshold:
-        elapsed = float('nan')  # unerfolgreiche Trainings
-
-    return (epochs, sample_points, elapsed)
+    return (epochs, sample_points, mse)  
 
 
 def _train_nn_with_epochs(args):
@@ -104,12 +93,15 @@ def _train_nn_with_epochs(args):
 
     return (epochs, mse, max_norm, nn_approx)
 
-def save_plot(fig, filename, save_dir="plots"):
+def save_plot(fig, filename, save_dir="plots", ext="svg", timestamp=True):
     os.makedirs(save_dir, exist_ok=True)
-    if not filename.endswith(".svg"):
-        filename = filename.rsplit('.', 1)[0] + ".svg"
-    fig.savefig(os.path.join(save_dir, filename), bbox_inches="tight", format='svg')
+    base, _ = os.path.splitext(filename)
+    if timestamp:
+        base += "_" + time.strftime("%d'%m'%Y_%H:%M:%S")
+    full_path = os.path.join(save_dir, f"{base}.{ext}")
+    fig.savefig(full_path, bbox_inches="tight", format=ext)
     plt.close(fig)
+
 
 def to_tensor_2d(array):
     arr = np.array(array)
@@ -432,7 +424,6 @@ class Experiment_ND:
         epochs_range, sample_points_range,
         nodes_per_layer=[8,8,8],
         n_random_samples=100,
-        mse_threshold=1e-6,
         sampling_method="random"):
 
         # 🆕 Grid aus möglichen Kombinationen
@@ -446,32 +437,39 @@ class Experiment_ND:
         function_args = [function.name, function.inputDim, function.outputDim, function.inDomainStart, function.inDomainEnd]
 
         args_list = [(e, s, nodes_per_layer, activation_function, loss_fn_class,
-            function_class, function_args, 10000, sampling_method, mse_threshold)
+            function_class, function_args, 10000, sampling_method)
             for e, s in chosen_combinations
         ]
 
+        # 🆕 ⬇️ Parallelisierte Ausführung bleibt, aber Ergebnis ist jetzt der MSE
         with ProcessPoolExecutor() as executor:
             results = list(executor.map(timed_train_wrapper, args_list))
-
-        #  Ergebnisse in Matrixform bringen
         heatmap_data = {}
-        for epochs, samples, t in results:
-            heatmap_data[(epochs, samples)] = t
+        total_models = len(results)
+        bar_length = 50  #Breite deines Fortschrittsbalkens
+        for i, (epochs, samples, mse) in enumerate(results):
+            # Update heatmap_data
+            heatmap_data[(epochs, samples)] = mse
 
-        #  In 2D Grid umwandeln
+            # Fortschrittsbalken anzeigen
+            progress = (i + 1) / total_models
+            block = int(bar_length * progress)
+            text = f"\rProgress: [{'#' * block}{'-' * (bar_length - block)}] {progress:.0%}"
+            print(text, end='', flush=True)
+        print()  # Für Zeilenumbruch nach Fertigstellung
+        # 2D-Grid aus MSE-Werten bauen
         heatmap = np.full((len(epochs_vals), len(sample_vals)), np.nan)
         for i, e in enumerate(epochs_vals):
             for j, s in enumerate(sample_vals):
                 heatmap[i, j] = heatmap_data.get((e, s), np.nan)
 
-        #  Heatmap plotten
+        # Heatmap für MSE plotten
         fig, ax = plt.subplots(figsize=(10, 8))
         sns.heatmap(heatmap, xticklabels=sample_vals, yticklabels=epochs_vals,
-                    cmap="viridis", ax=ax, cbar_kws={'label': 'Trainingszeit (s)'},
-                    mask=np.isnan(heatmap))
+                    cmap="magma_r", ax=ax, cbar_kws={'label': 'Mean Squared Error'},mask=np.isnan(heatmap))
 
         ax.set_xlabel("Sample Points")
         ax.set_ylabel("Epochen")
-        ax.set_title(f"Trainingszeit Heatmap (MSE ≤ {mse_threshold})")
-
+        ax.set_title(f"MSE Heatmap)")
+        ax.set_aspect("auto")
         save_plot(fig, save_name)
