@@ -12,14 +12,18 @@ class ShepardInterpolator(ApproximatorND):
         self.inputDim = 0
         self.outputDim = 0
 
-    def train(self, function:FunctionND):
+    def train(self, function: FunctionND):
         self.inputDim = function.inputDim
         self.outputDim = function.outputDim
         low = np.array(function.inDomainStart)
         high = np.array(function.inDomainEnd)
         self.dataPoints = np.random.uniform(low, high, size=(self.numPoints, self.inputDim))
         values = function.evaluate(self.dataPoints)
-        self.values = np.atleast_2d(values).T  # macht aus (1000,) ein (1000,1) Array
+        self.values = np.atleast_2d(values)
+        if self.values.shape[0] != self.numPoints:
+            self.values = self.values.T  # Korrektur nur falls nötig
+        assert self.values.shape == (self.numPoints, self.outputDim)
+
 
     def predict(self, input):
         query_points = np.asarray(input)  # shape (numQueryPoints, inputDim)
@@ -35,7 +39,7 @@ class ShepardInterpolator(ApproximatorND):
                 interpolated_values[i, :] = self.values[np.argmin(dists)]
             else:
                 # Gewichtete Summe für jede Output-Dimension separat
-                weighted_sum = np.sum(weights[:, np.newaxis] * self.values.T, axis=0)
+                weighted_sum = np.sum(weights[:, np.newaxis] * self.values, axis=0)
                 
                 sum_weights = np.sum(weights)
                 interpolated_values[i, :] = weighted_sum / sum_weights

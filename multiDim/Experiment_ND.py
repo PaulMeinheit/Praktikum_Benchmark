@@ -84,14 +84,16 @@ def train_and_predict(approximator_data):
     loss = loss_fn(to_tensor_2d(Y_pred), to_tensor_2d(Y_true)).item()
     return approximator.name, Y_pred, loss, approximator
 
+
 class Experiment_ND:
     def __init__(self, name, approximators, function, loss_fn=torch.nn.MSELoss(),
-                 parallel=True, vmin=1e-3, vmax=1.0):
+                 parallel=True, vmin=1e-3, vmax=1.0,logscale=False):
         self.name = name
         self.approximators = approximators
         self.function = function
         self.loss_fn = loss_fn
         self.parallel = parallel
+        self.logscale=logscale
         self.vmin = vmin
         self.vmax = vmax
         self.results = []
@@ -136,12 +138,21 @@ class Experiment_ND:
             'model': model
         } for name, Y_pred, loss, model in results_raw]
 
+    def _apply_logscale(self, values):
+        if self.logscale:
+            values = np.clip(values, self.vmin, self.vmax)
+        return np.log10(values) if self.logscale else values
+
+    def _label(self, base_label):
+        return f"log10({base_label})" if self.logscale else base_label
+
     def plot_error_histograms(self, bins=50, save_dir="plots"):
         for res in self.results:
             Y_true = np.atleast_2d(self.Y_true)
             Y_pred = np.atleast_2d(res['Y_pred'])
             name = res['name']
             error = Y_true - Y_pred
+            error = self._apply_logscale(error)
             output_dim = error.shape[1] if error.ndim > 1 else 1
 
             fig, axs = plt.subplots(output_dim, 1, figsize=(10, 3 * output_dim))
@@ -151,7 +162,7 @@ class Experiment_ND:
             for i in range(output_dim):
                 axs[i].hist(error[:, i], bins=bins, color='lightcoral', edgecolor='black')
                 axs[i].set_title(f"Fehlerverteilung – Output-Dim {i}")
-                axs[i].set_xlabel("Fehlerwert")
+                axs[i].set_xlabel(self._label("Fehlerwert"))  
                 axs[i].set_ylabel("Häufigkeit")
                 axs[i].grid(True)
 
@@ -185,12 +196,14 @@ class Experiment_ND:
                 X_slice[:, i] = x_ranges[i]
                 Y_pred = model.predict(X_slice)
                 Y_true = self.function.evaluate(X_slice)
+                Y_pred = self._apply_logscale(Y_pred)
+                Y_true = self._apply_logscale(Y_true)
 
                 axs[i].plot(x_ranges[i], Y_true, label="True", color="black", linestyle="--")
                 axs[i].plot(x_ranges[i], Y_pred, label="Predicted", color="blue")
                 axs[i].set_title(f"1D-Schnitt – Dimension {i}")
                 axs[i].set_xlabel(f"x_{i}")
-                axs[i].set_ylabel("Output")
+                axs[i].set_ylabel(self._label("Output"))
                 axs[i].legend()
                 axs[i].grid(True)
 
@@ -221,7 +234,7 @@ class Experiment_ND:
         # Plots erzeugen: Subplot Grid
         n_rows = (output_dim + n_cols - 1) // n_cols
         fig, axs = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows), squeeze=False)
-        fig.suptitle(f"{self.name} – PCA-Querschnitt, alle Output-Dimensionen", fontsize=16)
+        #fig.suptitle(f"{self.name} – PCA-Querschnitt, alle Output-Dimensionen", fontsize=16)
 
         # Alle Approximatoren vorbereiten: Vorhersagen am Raster
         preds = {}
@@ -230,6 +243,7 @@ class Experiment_ND:
             pred_vals = np.atleast_2d(pred_vals)
             if output_dim == 1:
                 pred_vals = pred_vals.reshape(-1)
+            pred_vals = self._apply_logscale(pred_vals)     
             preds[res['name']] = pred_vals
 
         # Plotten je Output-Dimension
@@ -253,7 +267,7 @@ class Experiment_ND:
 
             ax.set_title(f"Output-Dimension {i}")
             ax.set_xlabel("PCA Komponente 1")
-            ax.set_ylabel("Funktionswert")
+            ax.set_ylabel(self._label("Funktionswert"))
             ax.grid(True)
             ax.legend(fontsize='small')
 
@@ -293,7 +307,7 @@ class Experiment_ND:
         ax.plot(epochs_sorted, mse_losses, label="MSE Loss", marker='o')
         ax.plot(epochs_sorted, maxnorm_losses, label="Max Norm Loss", marker='s')
         ax.set_xlabel("Epochenzahl")
-        ax.set_ylabel("Fehler")
+        ax.set_ylabel(_label("Fehler"))
         ax.set_title(f"Fehler vs. Epochenzahl für NN Approximator\n({self.name})")
         ax.grid(True)
         ax.legend()
