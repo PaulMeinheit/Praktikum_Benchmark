@@ -27,7 +27,6 @@ def timed_train_wrapper(args):
          function_class, function_args,
          validation_points, sampling_method)
     )
-
     return (epochs, sample_points, mse)  
 
 
@@ -145,6 +144,7 @@ class Experiment_ND:
         self.results = []
         self.X = None
         self.Y_true = None
+        self.train()
 
     def train(self):
         input_dim = self.function.inputDim
