@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 class Approximator_NN_ND(ApproximatorND):
-    def __init__(self, params,activationFunction=nn.ReLU(),lossCriterium=nn.MSELoss()):
+    def __init__(self, params,activationFunction=nn.ReLU(),lossCriterium=torch.nn.SmoothL1Loss()):
         self.function = 0
         self.epochs = params[0]
         self.activationFunction=activationFunction

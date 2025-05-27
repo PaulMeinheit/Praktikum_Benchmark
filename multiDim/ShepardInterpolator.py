@@ -17,7 +17,7 @@ class ShepardInterpolator(ApproximatorND):
         if self.inputDim is None or self.outputDim is None:
             self.name = f"ShepardInterpolator_uninitialized"
             return
-        self.name = f"Shepard-Interpolator_Pow{self.power}_N{self.numPoints}"
+        self.name = f"Shepard-Interpolator_P{self.power}_N{self.numPoints}"
 
     def train(self, function: FunctionND):
         self.inputDim = function.inputDim

@@ -19,7 +19,7 @@ def time_vs_epochs_n_samplePoints(function,name="epochen_samplepoints_map",sampl
 
 
 def getApprox():
-    approx_shepard = ShepardInterpolator([],30000,power=2.5)
+    approx_shepard = ShepardInterpolator([],300000,power=4)
     approx_identity = Approximator_Identity_ND([])
     apprx = [approx_shepard]
     for i in {3000,4000}:
@@ -33,12 +33,12 @@ def getFunc():
     function_multiDim=Function_MultiDimOutput()
     function_sin_2D = Function_Sin_2D()
     function_sin_4D = Function_Sin_4D()
-    return function_multiDim
+    return function_sin_4D
 
 epochs = np.arange(1,300,20)
 #epochs_vs_loss(epochs,"random_test",getFunc())
 #time_vs_epochs_n_samplePoints(getFunc(),n_random_samples=100,nodes_per_layer=[4,4])
-exp = Experiment_ND("Test",getApprox(),getFunc(),parallel=False,logscale=False,loss_fn=torch.nn.L1Loss())
+exp = Experiment_ND("Test",getApprox(),getFunc(),parallel=False,logscale=False,loss_fn=torch.nn.SmoothL1Loss())
 
 
 exp.train()
@@ -46,4 +46,4 @@ exp.train()
 exp.print_loss_summary(mode="mse")
 exp.print_loss_summary(mode="l1")
 exp.print_loss_summary(mode="max")
-exp.plot_error_histograms(loss_fn=torch.nn.L1Loss())
+exp.plot_error_histograms(loss_fn=torch.nn.SmoothL1Loss())
