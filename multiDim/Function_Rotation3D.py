@@ -20,4 +20,4 @@ class Function_Rotation3D(FunctionND):
         returns: np.ndarray mit Form (n, 3), Vektorfeld der Rotation um rotation_axis
         """
         # Kreuzprodukt rotation_axis x inputs (für jeden Punkt)
-        return np.cross(np.tile(self.rotation_axis, (inputs.shape[0], 1)), inputs)
+        return self.format_output_shape(np.cross(np.tile(self.rotation_axis, (inputs.shape[0], 1)), inputs)) 

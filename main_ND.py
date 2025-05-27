@@ -18,17 +18,14 @@ def time_vs_epochs_n_samplePoints(function,name="epochen_samplepoints_map",sampl
     Experiment_ND("test",[],function).plot_training_time_heatmap_random_sampling(name,function,activation_function,loss_fn_class,epochs_range, sample_points_range,nodes_per_layer,n_random_samples)
 
 
-
-
-
 def getApprox():
-    approx_nn_nd = Approximator_NN_ND("NN 4-4-4 E:2k",[1500,1000,[8,8,8]],lossCriterium=torch.nn.L1Loss())
-    approx_nn_nd2= Approximator_NN_ND("NN 16-16 E:6k",[1000,10000,[16,16]])
-    
-    
-    approx_shepard = ShepardInterpolator([],100000)
+    approx_shepard = ShepardInterpolator([],30000,power=2.5)
     approx_identity = Approximator_Identity_ND([])
     apprx = [approx_shepard]
+    for i in {3000,4000}:
+        for j in {4000}:
+            apprx.append(Approximator_NN_ND([i,j,[8,8,8]]))
+
     return apprx
 
 def getFunc():
@@ -36,7 +33,7 @@ def getFunc():
     function_multiDim=Function_MultiDimOutput()
     function_sin_2D = Function_Sin_2D()
     function_sin_4D = Function_Sin_4D()
-    return function_sin_2D
+    return function_multiDim
 
 epochs = np.arange(1,300,20)
 #epochs_vs_loss(epochs,"random_test",getFunc())
@@ -45,6 +42,8 @@ exp = Experiment_ND("Test",getApprox(),getFunc(),parallel=False,logscale=False,l
 
 
 exp.train()
-exp.print_loss_summary()
-exp.plot_1d_slices()
-exp.plot_pca_querschnitt_all_outputs()
+
+exp.print_loss_summary(mode="mse")
+exp.print_loss_summary(mode="l1")
+exp.print_loss_summary(mode="max")
+exp.plot_error_histograms(loss_fn=torch.nn.L1Loss())

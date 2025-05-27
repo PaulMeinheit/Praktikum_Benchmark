@@ -21,4 +21,4 @@ class Function_MultiDimOutput(FunctionND):
         sum_all = np.sum(inputs, axis=1)
         
         output = np.vstack([prod_all, sum_all]).T
-        return output
+        return self.format_output_shape(output)

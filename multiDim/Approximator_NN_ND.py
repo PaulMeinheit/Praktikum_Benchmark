@@ -6,20 +6,27 @@ import torch.nn as nn
 import torch.optim as optim
 
 class Approximator_NN_ND(ApproximatorND):
-    def __init__(self, name, params,activationFunction=nn.ReLU(),lossCriterium=nn.MSELoss()):
-        self.name = name
+    def __init__(self, params,activationFunction=nn.ReLU(),lossCriterium=nn.MSELoss()):
         self.function = 0
         self.epochs = params[0]
         self.activationFunction=activationFunction
         self.samplePoints = params[1]
         self.nodesPerLayer = params[2]
         self.nn_general = None
-        self.criterion = None
         self.optimizer = None
+        self.learningRate = params[3] if len(params) > 3 else 0.01
         self.input_dim=None
         self.output_dim = None
         self.criterion = lossCriterium
         self.epochSum = 0
+        
+    def update_name(self):
+        if self.input_dim is None or self.output_dim is None:
+            self.name = f"NN_uninitialized"
+            return
+        layer_str = "-".join(map(str, [self.input_dim] + self.nodesPerLayer + [self.output_dim]))
+        self.name = f"NN_{layer_str}_E{self.epochs}_N{self.samplePoints}"
+
 
     def generate_random_data(self, samplePoints:int):
         self.input_dim = self.function.inputDim
@@ -46,7 +53,7 @@ class Approximator_NN_ND(ApproximatorND):
         target_tensor = torch.tensor(Y, dtype=torch.float32)
 
         self.nn_general = NN_General(self.input_dim, self.output_dim, self.nodesPerLayer,self.activationFunction)
-        self.optimizer = optim.Adam(self.nn_general.parameters(), lr=0.01)
+        self.optimizer = optim.Adam(self.nn_general.parameters(), lr=self.learningRate)
 
         for epoch in range(self.epochs):
             self.nn_general.train()
@@ -57,12 +64,14 @@ class Approximator_NN_ND(ApproximatorND):
             self.optimizer.step()
         
         self.epochSum += self.epochs
-
+        self.update_name()
     def predict(self, inputs):
         """
         inputs: np.ndarray mit Form (n, inputDim)
         returns: np.ndarray mit Form (n, outputDim)
         """
+        if self.nn_general is None:
+            raise RuntimeError("Das Modell wurde noch nicht trainiert!")
         self.nn_general.eval()
         input_tensor = torch.tensor(inputs, dtype=torch.float32)
         with torch.no_grad():

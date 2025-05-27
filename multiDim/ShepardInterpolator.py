@@ -3,14 +3,21 @@ from multiDim.ApproximatorND import ApproximatorND
 from multiDim.FunctionND import FunctionND
 class ShepardInterpolator(ApproximatorND):
     
-    def __init__(self, params, numPoints,power=3,name = "ShepardInterpolator_multi_dim"):
-        self.name = name
+    def __init__(self, params, numPoints,power=3):
+        
         self.params = params
         self.power = power
         self.eps = 1e-12
         self.numPoints = numPoints
         self.inputDim = 0
         self.outputDim = 0
+        self.name =""
+
+    def update_name(self):
+        if self.inputDim is None or self.outputDim is None:
+            self.name = f"ShepardInterpolator_uninitialized"
+            return
+        self.name = f"Shepard-Interpolator_Pow{self.power}_N{self.numPoints}"
 
     def train(self, function: FunctionND):
         self.inputDim = function.inputDim
@@ -22,6 +29,7 @@ class ShepardInterpolator(ApproximatorND):
         self.values = np.atleast_2d(values)
         if self.values.shape[0] != self.numPoints:
             self.values = self.values.T  # Korrektur nur falls nötig
+        self.update_name()
         
     def predict(self, input):
         query_points = np.asarray(input)  # shape (numQueryPoints, inputDim)

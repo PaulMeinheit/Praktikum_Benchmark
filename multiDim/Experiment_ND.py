@@ -10,7 +10,7 @@ import os
 from itertools import combinations
 from sklearn.decomposition import PCA
 from mpl_toolkits.mplot3d import Axes3D 
-import seaborn as sns
+from math import ceil
 
 def timed_train_wrapper(args):
     (epochs, sample_points,
@@ -144,7 +144,6 @@ class Experiment_ND:
         self.results = []
         self.X = None
         self.Y_true = None
-        self.train()
 
     def train(self):
         input_dim = self.function.inputDim
@@ -199,33 +198,98 @@ class Experiment_ND:
     def _label(self, base_label):
         return f"log10({base_label})" if self.logscale else base_label
 
-    def plot_error_histograms(self, bins=50, save_dir="plots"):
+
+    def plot_error_histograms(self, bins="auto", loss_fn=None, save_dir="plots", max_cols=4):
+        os.makedirs(save_dir, exist_ok=True)
+
+        Y_true = np.atleast_2d(self.Y_true)
+
+        # Berechne Fehler-Mittelwerte für jedes Resultat
+        results_with_error = []
         for res in self.results:
-            Y_true = np.atleast_2d(self.Y_true)
             Y_pred = np.atleast_2d(res['Y_pred'])
-            name = res['name']
-            error = Y_true - Y_pred
+
+            if loss_fn is not None:
+                error = np.array([
+                    loss_fn(
+                        torch.tensor(y_pred, dtype=torch.float32),
+                        torch.tensor(y_true, dtype=torch.float32)
+                    ).detach().item()
+                    for y_true, y_pred in zip(Y_true, Y_pred)
+                ])
+            else:
+                error = np.linalg.norm(Y_true - Y_pred, axis=1)
+
             error = self._apply_logscale(error)
-            output_dim = error.shape[1] if error.ndim > 1 else 1
+            mu = np.mean(error)
 
-            fig, axs = plt.subplots(output_dim, 1, figsize=(10, 3 * output_dim))
-            if output_dim == 1:
-                axs = [axs]
+            results_with_error.append((mu, res, error))
 
-            for i in range(output_dim):
-                axs[i].hist(error[:, i], bins=bins, color='lightcoral', edgecolor='black')
-                axs[i].set_title(f"Fehlerverteilung – Output-Dim {i}")
-                axs[i].set_xlabel(self._label("Fehlerwert"))  
-                axs[i].set_ylabel("Häufigkeit")
-                axs[i].grid(True)
+        # Sortiere nach Fehler-Mittelwert aufsteigend (besser = kleinerer Fehler)
+        results_with_error.sort(key=lambda x: x[0])
 
-            plt.tight_layout()
-            save_plot(fig, f"{name}_error_histogram.svg", save_dir)
+        num_results = len(results_with_error)
+        num_rows = ceil(num_results / max_cols)
 
-    def print_loss_summary(self):
-        print("\n📉 Loss Summary:")
+        fig, axs = plt.subplots(num_rows, max_cols, figsize=(5 * max_cols, 4 * num_rows))
+        axs = np.atleast_1d(axs).flatten()
+
+        for idx, (mu, res, error) in enumerate(results_with_error):
+            ax = axs[idx]
+            name = res['name']
+
+            sigma2 = np.var(error)
+
+            ax.hist(error, bins=bins, color='lightcoral', edgecolor='black')
+            ax.set_title(f"{name}")
+            ax.set_xlabel(self._label("Fehler"))
+            ax.set_ylabel("Häufigkeit")
+            ax.grid(True)
+            ax.legend([f"μ = {mu:.3g}, σ² = {sigma2:.3g}"])
+
+        # Leere Subplots entfernen
+        for j in range(idx + 1, len(axs)):
+            fig.delaxes(axs[j])
+
+        plt.tight_layout()
+        save_plot(fig, "Histograms")
+
+
+    def print_loss_summary(self, mode="mse"):
+        """
+        Druckt die Loss Summary sortiert nach dem gewählten Fehlermaß.
+
+        Parameters:
+        - mode: "mse", "l1", oder "max" – Standard ist "mse".
+        """
+        Y_true = np.atleast_2d(self.Y_true)
+
+        results_with_loss = []
+
         for res in self.results:
-            print(f"{res['name']}: Loss = {res['loss']:.6f}")
+            Y_pred = np.atleast_2d(res['Y_pred'])
+
+            if mode == "mse":
+                losses = np.mean((Y_true - Y_pred) ** 2, axis=1)
+                value = np.mean(losses)
+            elif mode == "l1":
+                losses = np.abs(Y_true - Y_pred)
+                value = np.mean(losses)
+            elif mode == "max":
+                losses = np.linalg.norm(Y_true - Y_pred, axis=1)
+                value = np.max(losses)
+            else:
+                raise ValueError(f"Unbekannter Modus: {mode}")
+
+            results_with_loss.append((res['name'], value))
+
+        # Sortieren nach dem Loss-Wert
+        results_with_loss.sort(key=lambda x: x[1])
+
+        print(f"\n📉 Loss Summary ({mode.upper()}):")
+        for name, loss_val in results_with_loss:
+            print(f"{name}: Loss = {loss_val:.6f}")
+
 
     def plot_1d_slices(self, resolution=2000):
         if self.X is None:
@@ -261,7 +325,7 @@ class Experiment_ND:
                 axs[i].grid(True)
 
             plt.tight_layout()
-            save_plot(fig, f"{name}_1d_slices.svg")
+            save_plot(fig, f"{name}_1d_slices")
 
     def plot_pca_querschnitt_all_outputs(self, n_points=2000, n_cols=4, save_dir="plots"):
         X = self.X
@@ -418,58 +482,3 @@ class Experiment_ND:
         plt.show()
         # Datei speichern
         save_plot(fig, "vector_fields_3D_all.svg")
-
-    # 🆕 Heatmap für Trainingszeiten vs. Epochs/Sample Points
-    def plot_training_time_heatmap_random_sampling(self,save_name,function, activation_function,loss_fn_class,
-        epochs_range, sample_points_range,
-        nodes_per_layer=[8,8,8],
-        n_random_samples=20,
-        sampling_method="random"):
-
-        
-        epochs_vals = np.linspace(*epochs_range, num=n_random_samples, dtype=int)
-        sample_vals = np.linspace(*sample_points_range, num=n_random_samples, dtype=int)
-        all_combinations = [(e, s) for e in epochs_vals for s in sample_vals]
-        np.random.shuffle(all_combinations)
-        chosen_combinations = all_combinations[:n_random_samples]
-
-        function_class = function.__class__
-        function_args = [function.name, function.inputDim, function.outputDim, function.inDomainStart, function.inDomainEnd]
-
-        args_list = [(e, s, nodes_per_layer, activation_function, loss_fn_class,
-            function_class, function_args, 10000, sampling_method)
-            for e, s in chosen_combinations
-        ]
-
-        # 🆕 ⬇️ Parallelisierte Ausführung bleibt, aber Ergebnis ist jetzt der MSE
-        with ProcessPoolExecutor() as executor:
-            results = list(executor.map(timed_train_wrapper, args_list))
-        heatmap_data = {}
-        total_models = len(results)
-        bar_length = 50  #Breite deines Fortschrittsbalkens
-        for i, (epochs, samples, mse) in enumerate(results):
-            # Update heatmap_data
-            heatmap_data[(epochs, samples)] = mse
-
-            # Fortschrittsbalken anzeigen
-            progress = (i + 1) / total_models
-            block = int(bar_length * progress)
-            text = f"\rProgress: [{'#' * block}{'-' * (bar_length - block)}] {progress:.0%}"
-            print(text, end='', flush=True)
-        print()  # Für Zeilenumbruch nach Fertigstellung
-        # 2D-Grid aus MSE-Werten bauen
-        heatmap = np.full((len(epochs_vals), len(sample_vals)), np.nan)
-        for i, e in enumerate(epochs_vals):
-            for j, s in enumerate(sample_vals):
-                heatmap[i, j] = heatmap_data.get((e, s), np.nan)
-
-        # Heatmap für MSE plotten
-        fig, ax = plt.subplots(figsize=(10, 8))
-        sns.heatmap(heatmap, xticklabels=sample_vals, yticklabels=epochs_vals,
-                    cmap="magma_r", ax=ax, cbar_kws={'label': 'Mean Squared Error'},mask=np.isnan(heatmap))
-
-        ax.set_xlabel("Sample Points")
-        ax.set_ylabel("Epochen")
-        ax.set_title(f"MSE Heatmap)")
-        ax.set_aspect("auto")
-        save_plot(fig, save_name)
