@@ -3,7 +3,7 @@ from multiDim.ApproximatorND import ApproximatorND
 from multiDim.FunctionND import FunctionND
 class ShepardInterpolator(ApproximatorND):
     
-    def __init__(self, params, numPoints,power=2,name = "ShepardInterpolator_multi_dim"):
+    def __init__(self, params, numPoints,power=3,name = "ShepardInterpolator_multi_dim"):
         self.name = name
         self.params = params
         self.power = power

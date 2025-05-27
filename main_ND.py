@@ -14,7 +14,7 @@ def epochs_vs_loss(epochs_list,name,function,nodesPerLayer=[8,8,8],samplePoints=
     loss_vs_epochs = Experiment_ND(name,[],function,logscale=logscale)
     loss_vs_epochs.plot_norms_vs_epochs(epochs_list,samplePoints,nodesPerLayer)
 
-def time_vs_epochs_n_samplePoints(function,name="epochen_samplepoints_map",sample_points_range=[100,120],epochs_range=[400,420],nodes_per_layer=[8,8,8],n_random_samples=400,activation_function=torch.nn.ReLU(),loss_fn_class=torch.nn.MSELoss):
+def time_vs_epochs_n_samplePoints(function,name="epochen_samplepoints_map",sample_points_range=[1,1000],epochs_range=[1,1000],nodes_per_layer=[4,4],n_random_samples=50,activation_function=torch.nn.ReLU(),loss_fn_class=torch.nn.MSELoss):
     Experiment_ND("test",[],function).plot_training_time_heatmap_random_sampling(name,function,activation_function,loss_fn_class,epochs_range, sample_points_range,nodes_per_layer,n_random_samples)
 
 
@@ -22,13 +22,13 @@ def time_vs_epochs_n_samplePoints(function,name="epochen_samplepoints_map",sampl
 
 
 def getApprox():
-    approx_nn_nd = Approximator_NN_ND("NN 4-4-4 E:2k",[9000,10000,[16,16,16]])
-    approx_nn_nd2 = Approximator_NN_ND("NN 16-16 E:6k",[1000,10000,[16,16]])
+    approx_nn_nd = Approximator_NN_ND("NN 4-4-4 E:2k",[1500,1000,[8,8,8]],lossCriterium=torch.nn.L1Loss())
+    approx_nn_nd2= Approximator_NN_ND("NN 16-16 E:6k",[1000,10000,[16,16]])
     
     
     approx_shepard = ShepardInterpolator([],100000)
     approx_identity = Approximator_Identity_ND([])
-    apprx = [approx_identity,approx_shepard,approx_nn_nd]
+    apprx = [approx_shepard]
     return apprx
 
 def getFunc():
@@ -36,15 +36,15 @@ def getFunc():
     function_multiDim=Function_MultiDimOutput()
     function_sin_2D = Function_Sin_2D()
     function_sin_4D = Function_Sin_4D()
-    return function_multiDim
+    return function_sin_2D
 
 epochs = np.arange(1,300,20)
 #epochs_vs_loss(epochs,"random_test",getFunc())
-time_vs_epochs_n_samplePoints(getFunc(),n_random_samples=100)
-#exp = Experiment_ND("Test",getApprox(),getFunc(),parallel=False,logscale=False)
+#time_vs_epochs_n_samplePoints(getFunc(),n_random_samples=100,nodes_per_layer=[4,4])
+exp = Experiment_ND("Test",getApprox(),getFunc(),parallel=False,logscale=False,loss_fn=torch.nn.L1Loss())
 
 
-#exp.train()
-#exp.print_loss_summary()
-#exp.plot_1d_slices()
-#exp.plot_pca_querschnitt_all_outputs()
+exp.train()
+exp.print_loss_summary()
+exp.plot_1d_slices()
+exp.plot_pca_querschnitt_all_outputs()

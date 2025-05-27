@@ -423,10 +423,10 @@ class Experiment_ND:
     def plot_training_time_heatmap_random_sampling(self,save_name,function, activation_function,loss_fn_class,
         epochs_range, sample_points_range,
         nodes_per_layer=[8,8,8],
-        n_random_samples=100,
+        n_random_samples=20,
         sampling_method="random"):
 
-        # 🆕 Grid aus möglichen Kombinationen
+        
         epochs_vals = np.linspace(*epochs_range, num=n_random_samples, dtype=int)
         sample_vals = np.linspace(*sample_points_range, num=n_random_samples, dtype=int)
         all_combinations = [(e, s) for e in epochs_vals for s in sample_vals]
