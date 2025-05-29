@@ -242,7 +242,7 @@ class Experiment_ND:
 
             ax.hist(error, bins=bins, color='lightcoral', edgecolor='black')
             ax.set_title(f"{name}")
-            ax.set_xlabel(self._label("Fehler"))
+            ax.set_xlabel("Fehler")
             ax.set_ylabel("Häufigkeit")
             ax.grid(True)
             ax.legend([f"μ = {mu:.3g}, σ² = {sigma2:.3g}"])
@@ -251,7 +251,7 @@ class Experiment_ND:
         for j in range(idx + 1, len(axs)):
             fig.delaxes(axs[j])
 
-        plt.tight_layout()
+#        plt.tight_layout()
         save_plot(fig, "Histograms")
 
 

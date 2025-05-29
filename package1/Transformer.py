@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-
+from multiDim.FunctionND import FunctionND
 import math
 from typing import Callable
 import numpy as np
@@ -179,7 +179,7 @@ class CreateTransformer(nn.Module):
 
 ####
 # --------- transformer for use  (das usen Timo) ---------
-class Transformer_Approximator(Approximator):
+class Approximator_Transformer(Approximator):
     def __init__(
         self,
         name="NaN",
@@ -215,8 +215,18 @@ class Transformer_Approximator(Approximator):
         self.nodesPerLayer = params[2]
         self.inputdimensions = inputdimensions
         self.outputdimensions = outputdimensions
+        self.transformer = None
+        self.criterion= None
+        self.optimizer= None
 
-        self.transformer = CreateTransformer(
+
+    def train(self, function:FunctionND):
+        
+        self.function = function  # Save reference to the function
+        self.inputdimensions = function.inDomainEnd
+        self.outputdimensions = function.inDomainStart
+
+        self.transformer=CreateTransformer(
             dim_model=self.dim_model,
             num_heads=self.num_heads,
             hidden_dims=self.nodesPerLayer,
@@ -230,10 +240,6 @@ class Transformer_Approximator(Approximator):
         )
         self.criterion = nn.MSELoss()
         self.optimizer = optim.Adam(self.transformer.parameters(), lr=0.01)
-
-
-    def train(self, function):
-        self.function = function  # Save reference to the function
 
         # Generate training input
         x_vals = torch.linspace(self.function.xdomainstart, self.function.xdomainend, self.samplePoints).unsqueeze(1)  # (samplePoints, 1)

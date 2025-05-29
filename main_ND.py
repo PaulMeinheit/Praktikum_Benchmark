@@ -7,6 +7,7 @@ from multiDim.ShepardInterpolator import ShepardInterpolator
 from multiDim.Approximator_Identity_ND import Approximator_Identity_ND
 from multiDim.Function_Rotation3D import Function_Rotation3D 
 import torch
+from package1.Transformer import Approximator_Transformer
 import numpy as np
 
 
@@ -19,10 +20,12 @@ def time_vs_epochs_n_samplePoints(function,name="epochen_samplepoints_map",sampl
 
 
 def getApprox():
-    approx_shepard = ShepardInterpolator([],300000,power=4)
+    approx_shepard = ShepardInterpolator([],3000,power=3)
     approx_identity = Approximator_Identity_ND([])
-    apprx = [approx_shepard]
-    for i in {3000,4000}:
+    transformer = Approximator_Transformer(name ="Transformer")
+    apprx = [transformer]
+    return apprx
+    for i in {300,400}:
         for j in {4000}:
             apprx.append(Approximator_NN_ND([i,j,[8,8,8]]))
 
@@ -33,7 +36,7 @@ def getFunc():
     function_multiDim=Function_MultiDimOutput()
     function_sin_2D = Function_Sin_2D()
     function_sin_4D = Function_Sin_4D()
-    return function_sin_4D
+    return function_rotation
 
 epochs = np.arange(1,300,20)
 #epochs_vs_loss(epochs,"random_test",getFunc())
@@ -46,4 +49,5 @@ exp.train()
 exp.print_loss_summary(mode="mse")
 exp.print_loss_summary(mode="l1")
 exp.print_loss_summary(mode="max")
-exp.plot_error_histograms(loss_fn=torch.nn.SmoothL1Loss())
+#exp.plot_error_histograms(loss_fn=torch.nn.SmoothL1Loss())
+exp.plot_pca_querschnitt_all_outputs()
