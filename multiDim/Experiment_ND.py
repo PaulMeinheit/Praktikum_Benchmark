@@ -291,15 +291,27 @@ class Experiment_ND:
             print(f"{name}: Loss = {loss_val:.6f}")
 
 
-    def plot_1d_slices(self, resolution=2000):
+    def plot_1d_slices(self, resolution=None,mode = "mean"):
         if self.X is None:
             raise ValueError("You must call train() before plotting.")
 
         input_dim = self.function.inputDim
+        if resolution == None:
+            resolution = 200*input_dim*self.function.outputDim
         x_ranges = [
             np.linspace(self.X[:, i].min(), self.X[:, i].max(), resolution)
             for i in range(input_dim)
-        ]
+        ]      
+        if mode == "mean":
+           fixed_values = np.mean(self.X, axis=0)
+        elif mode == "median":
+            fixed_values = np.median(self.X, axis=0)
+        
+        #erweiterbar für weitere Modi
+        else:
+            raise ValueError(f"Unbekannter mode: {mode}, bitte 'mean' oder 'median' verwenden.")
+                        
+        colors = plt.cm.get_cmap("tab20")  
 
         for res in self.results:
             name = res['name']
@@ -309,15 +321,25 @@ class Experiment_ND:
                 axs = [axs]
 
             for i in range(input_dim):
-                X_slice = np.tile(np.mean(self.X, axis=0), (resolution, 1))
+                X_slice = np.tile(fixed_values, (resolution, 1))
                 X_slice[:, i] = x_ranges[i]
                 Y_pred = model.predict(X_slice)
                 Y_true = self.function.evaluate(X_slice)
                 Y_pred = self._apply_logscale(Y_pred)
                 Y_true = self._apply_logscale(Y_true)
 
-                axs[i].plot(x_ranges[i], Y_true, label="True", color="black", linestyle="--")
-                axs[i].plot(x_ranges[i], Y_pred, label="Predicted", color="blue")
+                # Falls nur ein Output: in 2D-Form bringen für Schleife
+                if Y_true.ndim == 1:
+                    Y_true = Y_true[:, np.newaxis]
+                    Y_pred = Y_pred[:, np.newaxis]
+
+                n_outputs = Y_true.shape[1]
+
+                for j in range(n_outputs):
+                    color = colors(j % 20)  # zyklisch, falls mehr als 10 Outputs
+                    axs[i].plot(x_ranges[i], Y_true[:, j], label=f"Original {j}", linestyle="-", color=color)
+                    axs[i].plot(x_ranges[i], Y_pred[:, j], label=f"Prediction {j}", linestyle="--", color=color)
+
                 axs[i].set_title(f"1D-Schnitt – Dimension {i}")
                 axs[i].set_xlabel(f"x_{i}")
                 axs[i].set_ylabel(self._label("Output"))

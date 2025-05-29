@@ -183,21 +183,18 @@ class Approximator_Transformer(Approximator):
     def __init__(
         self,
         name="NaN",
-        dim_model=64, #----Amount of dimensions a vector embedding has
+        dim_model=8, #----Amount of dimensions a vector embedding has
         num_heads=4,  #----Amount of heads in multi head attention
-        num_layers=4, #-----Amount of encoder Layers
-        max_len=200, #-----Amount point to be handheld
+        num_layers=1, #-----Amount of encoder Layers
+        max_len=20000, #-----Amount point to be handheld
         pos_encoding_type='sinusoidal', #----type of positional encoding
         dropout=0.1, #----dropout value
         nnactivation_function= 'relu',
         inputdimensions = 2,
         outputdimensions = 1,
-        params=None,
+        params=[500, 500, [8, 8]],):
 
-    ):
-
-        if params is None:
-            params = [1200, 50, [8, 8, 8, 8]]
+        self.params=params
         self.epochSum = 0
         self.function = 0
         self.name=name
@@ -223,8 +220,8 @@ class Approximator_Transformer(Approximator):
     def train(self, function:FunctionND):
         
         self.function = function  # Save reference to the function
-        self.inputdimensions = function.inDomainEnd
-        self.outputdimensions = function.inDomainStart
+        self.inputdimensions = function.inputDim
+        self.outputdimensions = function.outputDim
 
         self.transformer=CreateTransformer(
             dim_model=self.dim_model,
@@ -240,24 +237,16 @@ class Approximator_Transformer(Approximator):
         )
         self.criterion = nn.MSELoss()
         self.optimizer = optim.Adam(self.transformer.parameters(), lr=0.01)
+        x_start = self.function.inDomainStart
+        x_end = self.function.inDomainEnd
 
-        # Generate training input
-        x_vals = torch.linspace(self.function.xdomainstart, self.function.xdomainend, self.samplePoints).unsqueeze(1)  # (samplePoints, 1)
-        if self.inputdimensions == 2:
-            x = torch.linspace(self.function.xdomainstart, self.function.xdomainend, self.samplePoints).unsqueeze(1)  # (samplePoints, 1)
-            y = torch.linspace(self.function.ydomainstart, self.function.ydomainend, self.samplePoints)
-            X, Y = torch.meshgrid(x, y, indexing='ij')  # (samplePoints, samplePoints)
-            x_vals = torch.stack([X.ravel(), Y.ravel()], dim=1)  #(samplePoints², 2)
-        if self.inputdimensions > 2:
-            x_vals = x_vals.repeat(1, self.inputdimensions)  #(samplePoints, inputdimensions)
-
-        # Apply the target function
-        y_vals = torch.stack([function.evaluate(x[0],x[1]) for x in x_vals], dim=0)  # (samplePoints, outputdimensions)
-
+        # Zufällige Punkte im Eingaberaum
+        x_vals = np.random.uniform(low=x_start, high=x_end, size=(self.samplePoints, self.inputdimensions))
+        y_vals = self.function.evaluate(x_vals)  # Erwartet: (samplePoints, outputDim)
         # Prepare for transformer: (batch, seq_len, input/output_dim)
-        x_input = x_vals.unsqueeze(0)  # (1, seq_len, input_dim)
-        y_target = y_vals.unsqueeze(0)  # (1, seq_len, output_dim)
-
+        x_input = torch.tensor(x_vals, dtype=torch.float32).unsqueeze(0)
+        y_target = torch.tensor(y_vals, dtype=torch.float32).unsqueeze(0)
+        
         for epoch in range(self.epochs):
             self.transformer.train()
             self.optimizer.zero_grad()
@@ -267,9 +256,6 @@ class Approximator_Transformer(Approximator):
 
             loss.backward()
             self.optimizer.step()
-
-            if epoch % 2 == 0 or epoch == self.epochs - 1:
-                print(f"[{self.__class__.__name__}] Epoch {epoch}: Loss = {loss.item():.6f}")
 
         self.epochSum += self.epochs
 
