@@ -5,6 +5,7 @@ from sklearn.linear_model import LinearRegression
 from concurrent.futures import ProcessPoolExecutor
 from multiDim.Approximator_NN_ND import Approximator_NN_ND
 import copy
+from multiDim.Approximator_Fourier_ND import Approximator_Fourier_ND
 import time
 import os
 from itertools import combinations
@@ -21,6 +22,7 @@ def timed_train_wrapper(args):
      function_args,
      validation_points,
      sampling_method) = args 
+    
     _, mse, _, _ = _train_nn_with_epochs(
         (epochs, sample_points, nodes_per_layer,
          activation_function, loss_fn_class,
@@ -52,8 +54,9 @@ def _train_nn_with_epochs(args):
         activationFunction=activation_function,
         lossCriterium=loss_fn
     )
-
+    start = time.time()
     nn_approx.train(function)
+    print(f"✅ {nn_approx.name} trained in {time.time() - start:.2f}s")
 
     input_dim = function.inputDim
     domain_start = np.array(function.inDomainStart)
@@ -108,14 +111,44 @@ def to_tensor_2d(array):
         arr = arr[:, np.newaxis]
     return torch.tensor(arr, dtype=torch.float32)
 
+def _train_fourier_with_max_freq(args):
+    max_freq, function_class, function_args,samplePoints = args
+    test_samples = 60000
+    # Funktion erzeugen
+    function = function_class(*function_args)
+    start = time.time()
+    
+
+    # Fourier-Approximator initialisieren
+    approximator = Approximator_Fourier_ND([samplePoints,max_freq])
+    approximator.train(function)
+    
+    # Testdaten zur Evaluation (gleichverteilte Punkte)
+    X_test = np.random.uniform(function.inDomainStart, function.inDomainEnd, size=(test_samples, function.inputDim))
+    Y_true = function.evaluate(X_test)
+    Y_pred = approximator.predict(X_test)
+    Y_pred = np.atleast_2d(Y_pred)
+    diff = Y_true - Y_pred
+    mse = np.mean(np.sum((diff)**2, axis=1))
+    max_norm = np.max(np.linalg.norm(diff, axis=1))
+    # Maximaler L1 Abstand (Summe der absoluten Differenzen pro Punkt)
+    max_l1_norm = np.max(np.sum(np.abs(diff), axis=1))
+
+    print(f"✅ {approximator.name} trained in {time.time() - start:.2f}s und l1: {max_l1_norm} und mse: {mse} und max: {max_norm}")
+
+    return max_freq, mse, max_norm,max_l1_norm
+
 def train_and_predict(args):
     # Wrapper Funktion für paralleles Training
     apx, func_class, func_params, X, Y_true, loss_fn = args
     # Reinitialisiere die Funktion, falls nötig
     function = func_class(*func_params)
-    
+    start = time.time()
     # Trainiere den Approximator auf der Funktion
     apx.train(function)
+
+    print(f"✅ {apx.name} trained in {time.time() - start:.2f}s")
+
     
     # Vorhersage
     Y_pred = apx.predict(X)
@@ -193,7 +226,8 @@ class Experiment_ND:
     def _apply_logscale(self, values):
         if self.logscale:
             values = np.clip(values, self.vmin, self.vmax)
-        return np.log10(values) if self.logscale else values
+            return np.log10(values)
+        return values
 
     def _label(self, base_label):
         return f"log10({base_label})" if self.logscale else base_label
@@ -504,3 +538,42 @@ class Experiment_ND:
         plt.show()
         # Datei speichern
         save_plot(fig, "vector_fields_3D_all.svg")
+
+    def plot_norms_vs_fourier_freq(self, max_freqs=20, samplePoints=2000,loss_fn_class=torch.nn.MSELoss, save_dir="plots"):
+        function_class = self.function.__class__
+        function_args = [self.function.name, self.function.inputDim, self.function.outputDim,
+                        self.function.inDomainStart, self.function.inDomainEnd]
+
+        # Liste von Parametern für parallele Ausführung vorbereiten
+        args_list = [
+            (max_freq, function_class, function_args,samplePoints)
+            for max_freq in range(max_freqs)
+        ]
+
+        # Paralleles Training
+        with ProcessPoolExecutor() as executor:
+            results = list(executor.map(_train_fourier_with_max_freq, args_list))
+
+        results.sort(key=lambda x: x[0])  # Nach max_freq sortieren
+
+        freq_sorted = [r[0] for r in results]
+        mse_losses = [r[1] for r in results]
+        maxnorm_losses = [r[2] for r in results]
+        max_l1_norm = [r[3] for r in results]
+        mse_losses = self._apply_logscale(mse_losses)
+        maxnorm_losses = self._apply_logscale(maxnorm_losses)
+        max_l1_norm = self._apply_logscale(max_l1_norm)
+        
+        # Plot erzeugen
+        fig, ax = plt.subplots(figsize=(8, 5))
+        ax.plot(freq_sorted, mse_losses, label="MSE-Loss", marker='o')
+        ax.plot(freq_sorted, max_l1_norm, label="L1-Loss", marker='o')
+
+        ax.plot(freq_sorted, maxnorm_losses, label="Max-Loss", marker='s')
+        ax.set_xlabel("Frequenzen für Training:{1,...,x}")
+        ax.set_ylabel(self._label("Fehler"))
+        ax.set_title(f"Fehler vs. max. Fourier-Frequenz\n({self.name})")
+        ax.grid(True)
+        ax.legend()
+        plt.tight_layout()
+        save_plot(fig, f"{self.name}_N{samplePoints}_error_vs_maxfreq.svg", save_dir)

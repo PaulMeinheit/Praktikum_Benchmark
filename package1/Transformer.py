@@ -183,8 +183,8 @@ class Approximator_Transformer(Approximator):
     def __init__(
         self,
         name="NaN",
-        dim_model=8, #----Amount of dimensions a vector embedding has
-        num_heads=4,  #----Amount of heads in multi head attention
+        dim_model=4, #----Amount of dimensions a vector embedding has
+        num_heads=2,  #----Amount of heads in multi head attention
         num_layers=1, #-----Amount of encoder Layers
         max_len=20000, #-----Amount point to be handheld
         pos_encoding_type='sinusoidal', #----type of positional encoding
