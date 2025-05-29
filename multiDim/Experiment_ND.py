@@ -132,11 +132,11 @@ def _train_fourier_with_max_freq(args):
     mse = np.mean(np.sum((diff)**2, axis=1))
     max_norm = np.max(np.linalg.norm(diff, axis=1))
     # Maximaler L1 Abstand (Summe der absoluten Differenzen pro Punkt)
-    max_l1_norm = np.max(np.sum(np.abs(diff), axis=1))
+    l1_norm = np.mean(np.sum(np.abs(diff), axis=1))
 
-    print(f"✅ {approximator.name} trained in {time.time() - start:.2f}s und l1: {max_l1_norm} und mse: {mse} und max: {max_norm}")
+    print(f"✅ {approximator.name} trained in {time.time() - start:.2f}s und l1: {l1_norm} und mse: {mse} und max: {max_norm}")
 
-    return max_freq, mse, max_norm,max_l1_norm
+    return max_freq, mse, max_norm,l1_norm
 
 def train_and_predict(args):
     # Wrapper Funktion für paralleles Training
@@ -244,6 +244,7 @@ class Experiment_ND:
             Y_pred = np.atleast_2d(res['Y_pred'])
 
             if loss_fn is not None:
+                loss_name="Custom-Loss"
                 error = np.array([
                     loss_fn(
                         torch.tensor(y_pred, dtype=torch.float32),
@@ -252,8 +253,8 @@ class Experiment_ND:
                     for y_true, y_pred in zip(Y_true, Y_pred)
                 ])
             else:
+                loss_name="L1-Loss"
                 error = np.linalg.norm(Y_true - Y_pred, axis=1)
-
             error = self._apply_logscale(error)
             mu = np.mean(error)
 
@@ -275,7 +276,7 @@ class Experiment_ND:
             sigma2 = np.var(error)
 
             ax.hist(error, bins=bins, color='lightcoral', edgecolor='black')
-            ax.set_title(f"{name}")
+            ax.set_title(f"{name} mit Fehlermaß "+loss_name)
             ax.set_xlabel("Fehler")
             ax.set_ylabel("Häufigkeit")
             ax.grid(True)
@@ -539,7 +540,7 @@ class Experiment_ND:
         # Datei speichern
         save_plot(fig, "vector_fields_3D_all.svg")
 
-    def plot_norms_vs_fourier_freq(self, max_freqs=20, samplePoints=2000,loss_fn_class=torch.nn.MSELoss, save_dir="plots"):
+    def plot_norms_vs_fourier_freq(self,ridge_rate=1, max_freqs=30, samplePoints=2000,loss_fn_class=torch.nn.MSELoss, save_dir="plots"):
         function_class = self.function.__class__
         function_args = [self.function.name, self.function.inputDim, self.function.outputDim,
                         self.function.inDomainStart, self.function.inDomainEnd]
@@ -559,15 +560,15 @@ class Experiment_ND:
         freq_sorted = [r[0] for r in results]
         mse_losses = [r[1] for r in results]
         maxnorm_losses = [r[2] for r in results]
-        max_l1_norm = [r[3] for r in results]
+        l1_norm = [r[3] for r in results]
         mse_losses = self._apply_logscale(mse_losses)
         maxnorm_losses = self._apply_logscale(maxnorm_losses)
-        max_l1_norm = self._apply_logscale(max_l1_norm)
+        l1_norm = self._apply_logscale(l1_norm)
         
         # Plot erzeugen
         fig, ax = plt.subplots(figsize=(8, 5))
         ax.plot(freq_sorted, mse_losses, label="MSE-Loss", marker='o')
-        ax.plot(freq_sorted, max_l1_norm, label="L1-Loss", marker='o')
+        ax.plot(freq_sorted, l1_norm, label="L1-Loss", marker='o')
 
         ax.plot(freq_sorted, maxnorm_losses, label="Max-Loss", marker='s')
         ax.set_xlabel("Frequenzen für Training:{1,...,x}")
