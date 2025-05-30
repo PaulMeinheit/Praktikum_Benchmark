@@ -132,7 +132,7 @@ def _train_fourier_with_max_freq(args):
     mse = np.mean(np.sum((diff)**2, axis=1))
     max_norm = np.max(np.linalg.norm(diff, axis=1))
     # Maximaler L1 Abstand (Summe der absoluten Differenzen pro Punkt)
-    l1_norm = np.mean(np.sum(np.abs(diff), axis=1))
+    l1_norm = np.mean(np.linalg.norm(diff, axis=1))
 
     print(f"✅ {approximator.name} trained in {time.time() - start:.2f}s und l1: {l1_norm} und mse: {mse} und max: {max_norm}")
 
@@ -540,20 +540,24 @@ class Experiment_ND:
         # Datei speichern
         save_plot(fig, "vector_fields_3D_all.svg")
 
-    def plot_norms_vs_fourier_freq(self,ridge_rate=1, max_freqs=30, samplePoints=2000,loss_fn_class=torch.nn.MSELoss, save_dir="plots"):
+    def plot_norms_vs_fourier_freq(self,ridge_rate=1, max_freqs=30, samplePoints=50000,loss_fn_class=torch.nn.MSELoss, save_dir="plots",parallel=True):
         function_class = self.function.__class__
         function_args = [self.function.name, self.function.inputDim, self.function.outputDim,
                         self.function.inDomainStart, self.function.inDomainEnd]
-
+        how_many_points_on_plot = 20
         # Liste von Parametern für parallele Ausführung vorbereiten
         args_list = [
-            (max_freq, function_class, function_args,samplePoints)
-            for max_freq in range(max_freqs)
+            (((int)(max_freq*(max_freqs/how_many_points_on_plot))), function_class, function_args,samplePoints)
+            for max_freq in range(((int)(how_many_points_on_plot)))
         ]
+        if parallel:
+            print("🚀 Starte parallele Verarbeitung...")
+            with ProcessPoolExecutor() as executor:
+                results = list(executor.map(_train_fourier_with_max_freq, args_list))
+        else:
+            print("🧘 Starte sequentielle Verarbeitung...")
+            results = [_train_fourier_with_max_freq(args) for args in args_list]
 
-        # Paralleles Training
-        with ProcessPoolExecutor() as executor:
-            results = list(executor.map(_train_fourier_with_max_freq, args_list))
 
         results.sort(key=lambda x: x[0])  # Nach max_freq sortieren
 

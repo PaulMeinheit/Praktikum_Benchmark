@@ -22,10 +22,10 @@ class Function_Periodic_Behaviour(FunctionND):
         z = inputs[:, 2]
         u = inputs[:, 3]
 
-        out1 = np.sin(2 * np.pi * x) + np.cos(2 * np.pi * y)
-        out2 = np.sin(3 * np.pi * y) + np.cos(2 * np.pi * z)
-        out3 = np.sin(4 * np.pi * z + np.pi/4) + np.cos(3 * np.pi * u)
-        out4 = np.sin(5 * np.pi * x) + np.sin(5 * np.pi * u)+y
+        out1 = np.sin(2.425 * np.pi * x) + np.cos(22.1 * np.pi * y)
+        out2 = np.sin(3.2223 * np.pi * y) + np.cos(2.123 * np.pi * z)
+        out3 = np.sin(40 * np.pi * z + np.pi/4.22) + np.cos(3.123312 * np.pi * u)
+        out4 = np.sin(5.2232 * np.pi * x) + np.sin(5.241 * np.pi * u)+y
 
         outputs = np.stack([out1, out2, out3, out4], axis=1) * 100  # optional: skalieren
 

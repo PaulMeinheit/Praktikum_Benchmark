@@ -52,5 +52,5 @@ def getFunc():
     function_sin_4D = Function_Sin_4D()
     return function_periodic
 
-Experiment_ND("Fourier-Experiment",[],getFunc(),logscale=True,vmin=1e-17,vmax=1e50).plot_norms_vs_fourier_freq(max_freqs=100,ridge_rate=1e-1,samplePoints=100000)
+Experiment_ND("Fourier-Experiment",[],getFunc(),logscale=True,vmin=1e-17,vmax=1e50).plot_norms_vs_fourier_freq(parallel=False,max_freqs=500,ridge_rate=1e-1,samplePoints=100000)
 #startCasualExp()
