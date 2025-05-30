@@ -1,6 +1,7 @@
 import numpy as np
 from .ApproximatorND import ApproximatorND
 from sklearn.linear_model import Ridge
+from sklearn.linear_model import Lasso
 class Approximator_Fourier_ND(ApproximatorND):
     def __init__(self, params=[5000,20],ridge_lambda=1e-2):
         # params = [samplePoints, max_frequency]
@@ -28,7 +29,7 @@ class Approximator_Fourier_ND(ApproximatorND):
 
         X_norm = self._normalize_inputs(X)
 
-        for freq in range(self.max_frequency + 1):
+        for freq in range(0,self.max_frequency + 1):
             for d in range(input_dim):
                 arg = 2 * np.pi * freq * X_norm[:, d]  # jetzt sind freq Perioden in Domain
                 features.append(np.sin(arg))
@@ -56,19 +57,21 @@ class Approximator_Fourier_ND(ApproximatorND):
             Y = Y[:, np.newaxis]
         
 
-
+        #lasso =Lasso(alpha=self.lambda_reg)
         # Ridge Regression fitten (alpha ist der Regularisierungsparameter)
         ridge = Ridge(alpha=self.lambda_reg, fit_intercept=False)  
-        # fit_intercept False, weil Phi schon die "Konstante" durch freq=0 enthält
+        
         ridge.fit(Phi, Y)
         self.coeffs = ridge.coef_.T  # sklearn gibt (output_dim, n_features) zurück, wir brauchen (n_features, output_dim)
-   
+        
+
     def _normalize_inputs(self, X):
         """
         Normiert die Eingaben X (n_samples, input_dim) auf [0,1] basierend auf der Funktionsdomain.
         """
         start = np.array(self.function.inDomainStart)
         end = np.array(self.function.inDomainEnd)
+        
         return (X - start) / (end - start)
 
     def predict(self, inputs):
@@ -76,5 +79,4 @@ class Approximator_Fourier_ND(ApproximatorND):
         Y_pred = Phi @ self.coeffs  # (n_samples, output_dim)
         if Y_pred.ndim == 1:
             Y_pred = Y_pred[:, np.newaxis]  # macht aus (n,) -> (n,1)
-
         return Y_pred

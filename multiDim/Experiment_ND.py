@@ -233,7 +233,7 @@ class Experiment_ND:
         return f"log10({base_label})" if self.logscale else base_label
 
 
-    def plot_error_histograms(self, bins="auto", loss_fn=None, save_dir="plots", max_cols=4):
+    def plot_error_histograms(self, bins="auto", loss_fn=None, save_dir="plots", max_cols=3):
         os.makedirs(save_dir, exist_ok=True)
 
         Y_true = np.atleast_2d(self.Y_true)
@@ -286,7 +286,7 @@ class Experiment_ND:
         for j in range(idx + 1, len(axs)):
             fig.delaxes(axs[j])
 
-#        plt.tight_layout()
+        plt.tight_layout()
         save_plot(fig, "Histograms")
 
 

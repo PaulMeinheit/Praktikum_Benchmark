@@ -6,6 +6,7 @@ from multiDim.Function_multiDimOutput import Function_MultiDimOutput
 from multiDim.ShepardInterpolator import ShepardInterpolator
 from multiDim.Approximator_Identity_ND import Approximator_Identity_ND
 from multiDim.Function_Rotation3D import Function_Rotation3D 
+from multiDim.Function_Periodic_Behaviour import Function_Periodic_Behaviour 
 import torch
 from multiDim.Approximator_Fourier_ND import Approximator_Fourier_ND
 from package1.Transformer import Approximator_Transformer
@@ -30,13 +31,13 @@ def startCasualExp():
     exp.plot_1d_slices(mode="median")
 
 def getApprox():
-    approx_shepard = ShepardInterpolator([],50000,power=3)
+    approx_shepard = ShepardInterpolator([],100000,power=3)
     approx_identity = Approximator_Identity_ND([])
-    approx_fourier = Approximator_Fourier_ND(params=[50000,90])
+    approx_fourier = Approximator_Fourier_ND(params=[100000,200],ridge_lambda=1e-1)
 
-    approx_fourier2 = Approximator_Fourier_ND(params=[50000,30])
+    approx_fourier2 = Approximator_Fourier_ND(params=[500000,40])
     approx_transformer = Approximator_Transformer(params=[800,1000,[16,16]],num_layers=2,name ="Transformer")
-    apprx = [approx_shepard,approx_fourier2,approx_fourier]
+    apprx = [approx_fourier2,approx_fourier]
     return apprx
     for i in {9000}:
         for j in {10000}:
@@ -46,9 +47,10 @@ def getApprox():
 def getFunc():
     function_rotation = Function_Rotation3D()
     function_multiDim=Function_MultiDimOutput()
+    function_periodic = Function_Periodic_Behaviour()
     function_sin_2D = Function_Sin_2D()
     function_sin_4D = Function_Sin_4D()
-    return function_sin_4D
+    return function_periodic
 
-#Experiment_ND("Fourier-Experiment",[],getFunc(),logscale=True,vmin=1e-15,vmax=1e50).plot_norms_vs_fourier_freq()
-startCasualExp()
+Experiment_ND("Fourier-Experiment",[],getFunc(),logscale=True,vmin=1e-17,vmax=1e50).plot_norms_vs_fourier_freq(max_freqs=100,ridge_rate=1e-1,samplePoints=100000)
+#startCasualExp()
