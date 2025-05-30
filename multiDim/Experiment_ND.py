@@ -134,7 +134,7 @@ def _train_fourier_with_max_freq(args):
     # Maximaler L1 Abstand (Summe der absoluten Differenzen pro Punkt)
     l1_norm = np.mean(np.linalg.norm(diff, axis=1))
 
-    print(f"✅ {approximator.name} trained in {time.time() - start:.2f}s und l1: {l1_norm} und mse: {mse} und max: {max_norm}")
+    print(f"✅ {approximator.name} trained in {time.time() - start:.2f}s und l1: {l1_norm:.2f} und mse: {mse:.2f} und max: {max_norm:.2f}")
 
     return max_freq, mse, max_norm,l1_norm
 
@@ -165,7 +165,7 @@ def train_and_predict(args):
 
 class Experiment_ND:
     def __init__(self, name, approximators, function, loss_fn=torch.nn.MSELoss(),
-                 parallel=True, vmin=1e-3, vmax=1.0,logscale=False):
+                 parallel=True,vmin=1e-17,vmax=1e50,logscale=False):
         self.name = name
         self.approximators = approximators
         self.function = function
@@ -540,15 +540,16 @@ class Experiment_ND:
         # Datei speichern
         save_plot(fig, "vector_fields_3D_all.svg")
 
-    def plot_norms_vs_fourier_freq(self,ridge_rate=1, max_freqs=30, samplePoints=50000,loss_fn_class=torch.nn.MSELoss, save_dir="plots",parallel=True):
+    def plot_norms_vs_fourier_freq(self,ridge_rate=1, max_freqs=30, samplePoints=50000,how_many_points_on_plot = 20,loss_fn_class=torch.nn.MSELoss, save_dir="plots",parallel=True):
         function_class = self.function.__class__
         function_args = [self.function.name, self.function.inputDim, self.function.outputDim,
                         self.function.inDomainStart, self.function.inDomainEnd]
-        how_many_points_on_plot = 20
+        
+
         # Liste von Parametern für parallele Ausführung vorbereiten
         args_list = [
             (((int)(max_freq*(max_freqs/how_many_points_on_plot))), function_class, function_args,samplePoints)
-            for max_freq in range(((int)(how_many_points_on_plot)))
+            for max_freq in range(((int)(how_many_points_on_plot+1)))
         ]
         if parallel:
             print("🚀 Starte parallele Verarbeitung...")

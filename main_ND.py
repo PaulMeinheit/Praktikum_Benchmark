@@ -50,7 +50,8 @@ def getFunc():
     function_periodic = Function_Periodic_Behaviour()
     function_sin_2D = Function_Sin_2D()
     function_sin_4D = Function_Sin_4D()
-    return function_periodic
+    return function_sin_2D
 
-Experiment_ND("Fourier-Experiment",[],getFunc(),logscale=True,vmin=1e-17,vmax=1e50).plot_norms_vs_fourier_freq(parallel=False,max_freqs=500,ridge_rate=1e-1,samplePoints=100000)
+exp = Experiment_ND("Fourier_Frequenzen_vs_Loss",[],getFunc(),logscale=True)
+exp.plot_norms_vs_fourier_freq(how_many_points_on_plot= 15,parallel=False,max_freqs=500,ridge_rate=1e-1,samplePoints=200000)
 #startCasualExp()
