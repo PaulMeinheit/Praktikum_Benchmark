@@ -583,3 +583,32 @@ class Experiment_ND:
         ax.legend()
         plt.tight_layout()
         save_plot(fig, f"{self.name}_N{samplePoints}_error_vs_maxfreq.svg", save_dir)
+
+
+    def visualize2D(self, resolution=4000, save_path="plots"):
+        """
+        Visualisiert die Funktion in 2D, falls inputDim=2 und outputDim=1.
+        """
+        if self.function.inputDim != 2 or self.function.outputDim != 1:
+            raise ValueError("Visualisierung nur für 2D→1D Funktionen unterstützt.")
+
+        x_vals = np.linspace(self.function.inDomainStart[0], self.function.inDomainEnd[0], resolution)
+        y_vals = np.linspace(self.function.inDomainStart[1], self.function.inDomainEnd[1], resolution)
+        X, Y = np.meshgrid(x_vals, y_vals)
+        grid_points = np.stack([X.ravel(), Y.ravel()], axis=-1)
+        Z = self.approximators[0].predict(grid_points).reshape(resolution, resolution)
+
+        fig, ax = plt.subplots(figsize=(8, 6))
+        cmap = plt.get_cmap("plasma")  # Mandelbrot ist meist nur 0 oder 1
+        c = ax.imshow(Z, extent=(self.function.inDomainStart[0], self.function.inDomainEnd[0],
+                                 self.function.inDomainStart[1], self.function.inDomainEnd[1]),
+                      origin='lower', cmap=cmap, aspect='auto')
+
+        ax.set_xlabel("Re(c)")
+        ax.set_ylabel("x")
+        ax.set_title(f"Function {self.function.name} Plot")
+
+        if save_path:
+            save_plot(fig,f"2D_Visualisation_Func{self.function.name}")
+        else:
+            plt.show()

@@ -37,6 +37,8 @@ class ShepardInterpolator(ApproximatorND):
         interpolated_values = np.empty((numQueryPoints, self.outputDim))
 
         for i, qp in enumerate(query_points):
+            if i%1000 ==0:
+                print(f"Point {i}/{self.dataPoints.__len__}")
             dists = np.linalg.norm(self.dataPoints - qp, axis=1)  # Distanz zu allen Trainingspunkten
             weights = 1.0 / (dists**self.power + self.eps)
 

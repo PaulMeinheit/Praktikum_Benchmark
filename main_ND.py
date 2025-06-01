@@ -12,6 +12,7 @@ from multiDim.Approximator_Fourier_ND import Approximator_Fourier_ND
 from package1.Transformer import Approximator_Transformer
 import numpy as np
 import torch.nn as nn
+from multiDim.Function_Mandelbrot_2D import Function_Mandelbrot
 
 
 def epochs_vs_loss(function,name,epochs_list=np.arange(1,300,20),nodesPerLayer=[8,8,8],samplePoints=10,logscale=False):
@@ -32,9 +33,11 @@ def startCasualExp():
     exp.plot_1d_slices(mode="median")
 
 def getApprox():
-    approx_shepard = ShepardInterpolator([],100000,power=3)
+    approx_shepard = ShepardInterpolator([],300000,power=3)
     approx_identity = Approximator_Identity_ND([])
-    apprx = []
+    apprx = [approx_shepard]
+    return apprx
+    
     for i in {3,10,30,50,100,300}:
         for j in {10000,50000,100000,300000}:
             for k in {1e-1,1e-2,1e-3}:
@@ -54,8 +57,12 @@ def getFunc():
     function_periodic = Function_Periodic_Behaviour()
     function_sin_2D = Function_Sin_2D()
     function_sin_4D = Function_Sin_4D()
-    return function_sin_2D
+    function_mandel = Function_Mandelbrot()
+    return function_mandel
 
 #exp = Experiment_ND("Fourier_Frequenzen_vs_Loss",[],getFunc(),logscale=True)
 #exp.plot_norms_vs_fourier_freq(how_many_points_on_plot= 15,parallel=False,max_freqs=300,ridge_rate=1e-1,samplePoints=20000)
-startCasualExp()
+#startCasualExp()
+exp = Experiment_ND("Test",getApprox(),getFunc(),parallel=False,logscale=False,loss_fn=torch.nn.SmoothL1Loss())
+exp.train()
+exp.visualize2D()
