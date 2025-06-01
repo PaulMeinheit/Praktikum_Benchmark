@@ -99,7 +99,7 @@ def save_plot(fig, filename, save_dir="plots", ext="svg", timestamp=True):
     os.makedirs(save_dir, exist_ok=True)
     base, _ = os.path.splitext(filename)
     if timestamp:
-        base += "_" + time.strftime("%d'%m'%Y_%H:%M:%S")
+        base += "_" + time.strftime("%d-%m-%Y_%H-%M-%S")
     full_path = os.path.join(save_dir, f"{base}.{ext}")
     fig.savefig(full_path, bbox_inches="tight", format=ext)
     plt.close(fig)

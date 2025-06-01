@@ -19,7 +19,7 @@ class Approximator_Fourier_ND(ApproximatorND):
         if self.input_dim is None or self.output_dim is None:
             self.name = f"Fourier_uninitialized"
             return
-        self.name = f"Fourier_Regressor_N{self.samplePoints}_Freq_per_Dim{self.max_frequency}"
+        self.name = f"Fourier_N{self.samplePoints}_Freq{self.max_frequency}_λ{self.lambda_reg}"
 
 
     def _fourier_features(self, X):
