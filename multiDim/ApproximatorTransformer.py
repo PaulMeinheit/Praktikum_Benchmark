@@ -101,6 +101,7 @@ class FeedForwardNN(nn.Module):
 class TransformerEncoderLayer(nn.Module):
     def __init__(self, dim_model, num_heads, hidden_dims, activation_fn='relu', dropout=0.1):
         super().__init__()
+
         self.attention = nn.MultiheadAttention(dim_model, num_heads, dropout=dropout)
         self.ffnn = FeedForwardNN(dim_model, hidden_dims, activation_fn)
 
@@ -187,13 +188,16 @@ class Approximator_Transformer(Approximator):
         num_heads=2,  #----Amount of heads in multi head attention
         num_layers=1, #-----Amount of encoder Layers
         max_len=20000, #-----Amount point to be handheld
-        pos_encoding_type='sinusoidal', #----type of positional encoding
+        pos_encoding_type='none', #----type of positional encoding
         dropout=0.1, #----dropout value
         nnactivation_function= 'relu',
         inputdimensions = 2,
         outputdimensions = 1,
+        device= None,
         params=[500, 500, [8, 8]],):
 
+
+        self.device = device if device else torch.device("cpu")
         self.params=params
         self.epochSum = 0
         self.function = 0
@@ -234,7 +238,7 @@ class Approximator_Transformer(Approximator):
             activation_fn=self.nnactivation_function,
             inputdimensions=self.inputdimensions,
             outputdimensions=self.outputdimensions,
-        )
+        ).to(self.device)
         self.criterion = nn.MSELoss()
         self.optimizer = optim.Adam(self.transformer.parameters(), lr=0.01)
         x_start = self.function.inDomainStart
@@ -244,8 +248,8 @@ class Approximator_Transformer(Approximator):
         x_vals = np.random.uniform(low=x_start, high=x_end, size=(self.samplePoints, self.inputdimensions))
         y_vals = self.function.evaluate(x_vals)  # Erwartet: (samplePoints, outputDim)
         # Prepare for transformer: (batch, seq_len, input/output_dim)
-        x_input = torch.tensor(x_vals, dtype=torch.float32).unsqueeze(0)
-        y_target = torch.tensor(y_vals, dtype=torch.float32).unsqueeze(0)
+        x_input = torch.tensor(x_vals, dtype=torch.float32).unsqueeze(0).to(self.device)
+        y_target = torch.tensor(y_vals, dtype=torch.float32).unsqueeze(0).to(self.device)
         
         for epoch in range(self.epochs):
             self.transformer.train()
@@ -263,7 +267,7 @@ class Approximator_Transformer(Approximator):
         self.transformer.eval()
 
         # Convert to tensor of shape (1, seq_len, input_dim)
-        x_input = torch.tensor(X, dtype=torch.float32).unsqueeze(0)  # (1, seq_len, input_dim)
+        x_input = torch.tensor(X, dtype=torch.float32).unsqueeze(0).to(self.device)  # (1, seq_len, input_dim)
 
         with torch.no_grad():
             prediction = self.transformer(x_input)  # (1, seq_len, output_dim)

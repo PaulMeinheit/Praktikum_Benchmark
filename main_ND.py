@@ -6,14 +6,19 @@ from multiDim.Function_multiDimOutput import Function_MultiDimOutput
 from multiDim.ShepardInterpolator import ShepardInterpolator
 from multiDim.Approximator_Identity_ND import Approximator_Identity_ND
 from multiDim.Function_Rotation3D import Function_Rotation3D 
-from multiDim.Function_Periodic_Behaviour import Function_Periodic_Behaviour 
-from multiDim.BasicArm import BasicArm
+from multiDim.Function_Periodic_Behaviour import Function_Periodic_Behaviour
 import torch
 from multiDim.Approximator_Fourier_ND import Approximator_Fourier_ND
-from package1.Transformer import Approximator_Transformer
+from multiDim.ApproximatorTransformer import Approximator_Transformer
 import numpy as np
 import torch.nn as nn
 from multiDim.Function_Mandelbrot_2D import Function_Mandelbrot
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if torch.cuda.is_available() :
+    print("CUDA available")
+else:
+    print("CUDA NOT available")
 
 
 def epochs_vs_loss(function,name,epochs_list=np.arange(1,300,20),nodesPerLayer=[8,8,8],samplePoints=10,logscale=False):
@@ -36,7 +41,8 @@ def startCasualExp():
 def getApprox():
     approx_shepard = ShepardInterpolator([],300000,power=3)
     approx_identity = Approximator_Identity_ND([])
-    apprx = [approx_shepard]
+    approx_transformer = Approximator_Transformer( params=[500, 500, [16, 16]], device = device)
+    apprx = [approx_transformer,approx_shepard]
     return apprx
     
     for i in {3,10,30,50,100,300}:
@@ -54,7 +60,6 @@ def getApprox():
 
 def getFunc():
     function_rotation = Function_Rotation3D()
-    function_BasicArm = BasicArm()
     function_multiDim=Function_MultiDimOutput()
     function_periodic = Function_Periodic_Behaviour()
     function_sin_2D = Function_Sin_2D()
@@ -65,6 +70,9 @@ def getFunc():
 #exp = Experiment_ND("Fourier_Frequenzen_vs_Loss",[],getFunc(),logscale=True)
 #exp.plot_norms_vs_fourier_freq(how_many_points_on_plot= 15,parallel=False,max_freqs=300,ridge_rate=1e-1,samplePoints=20000)
 #startCasualExp()
+
+
+
 exp = Experiment_ND("Test",getApprox(),getFunc(),parallel=False,logscale=False,loss_fn=torch.nn.SmoothL1Loss())
 exp.train()
-exp.visualize2D()
+exp.visualize2D(resolution= 50)

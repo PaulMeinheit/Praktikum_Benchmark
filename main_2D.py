@@ -5,7 +5,7 @@ from package1.Approx_Linear_Regression import Approx_Linear_Regression
 from package1.Function_Chess import Function_Chess
 from package1.Function_Rosenbrock import Function_Rosenbrock
 from package1.Approx_NN import NN_Approximator
-from package1.Transformer import Transformer_Approximator
+from multiDim.ApproximatorTransformer import Transformer_Approximator
 from package1.Function_Ackley import Function_Ackley
 from package1.Function_Heart import Function_Heart
 import numpy as np
