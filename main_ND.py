@@ -7,6 +7,7 @@ from multiDim.ShepardInterpolator import ShepardInterpolator
 from multiDim.Approximator_Identity_ND import Approximator_Identity_ND
 from multiDim.Function_Rotation3D import Function_Rotation3D 
 from multiDim.Function_Periodic_Behaviour import Function_Periodic_Behaviour 
+from multiDim.BasicArm import BasicArm
 import torch
 from multiDim.Approximator_Fourier_ND import Approximator_Fourier_ND
 from package1.Transformer import Approximator_Transformer
@@ -53,6 +54,7 @@ def getApprox():
 
 def getFunc():
     function_rotation = Function_Rotation3D()
+    function_BasicArm = BasicArm()
     function_multiDim=Function_MultiDimOutput()
     function_periodic = Function_Periodic_Behaviour()
     function_sin_2D = Function_Sin_2D()
