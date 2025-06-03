@@ -7,6 +7,7 @@ from multiDim.ShepardInterpolator import ShepardInterpolator
 from multiDim.Approximator_Identity_ND import Approximator_Identity_ND
 from multiDim.Function_Rotation3D import Function_Rotation3D 
 from multiDim.Function_Periodic_Behaviour import Function_Periodic_Behaviour
+from multiDim.BasicArm import Function_BasicArm
 import torch
 from multiDim.Approximator_Fourier_ND import Approximator_Fourier_ND
 from multiDim.ApproximatorTransformer import Approximator_Transformer
@@ -42,12 +43,10 @@ def getApprox():
     approx_shepard = ShepardInterpolator([],30,power=3)
     approx_identity = Approximator_Identity_ND([])
     approx_transformer = Approximator_Transformer( params=[500, 500, [16, 16]], device = device)
-    apprx = [approx_transformer,approx_shepard]
-    return apprx
-    
-    for i in {3,10,30,50,100,300}:
-        for j in {10000,50000,100000,300000}:
-            for k in {1e-1,1e-2,1e-3}:
+    apprx = [approx_identity]
+    for i in {3,10}:
+        for j in {10000,50000}:
+            for k in {1e-1}:
                 apprx.append(Approximator_Fourier_ND(params=[j,i],ridge_lambda=k))
     approx_fourier2 = Approximator_Fourier_ND(params=[500000,40])
     approx_transformer = Approximator_Transformer(params=[800,1000,[16,16]],num_layers=2,name ="Transformer")
@@ -63,6 +62,7 @@ def getFunc():
     function_multiDim=Function_MultiDimOutput()
     function_periodic = Function_Periodic_Behaviour()
     function_sin_2D = Function_Sin_2D()
+    function_BasicArm=Function_BasicArm()
     function_sin_4D = Function_Sin_4D()
     function_mandel = Function_Mandelbrot()
     return function_BasicArm

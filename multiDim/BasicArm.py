@@ -4,7 +4,7 @@ from ikpy.chain import Chain
 from ikpy.link import DHLink
 from ikpy.link import OriginLink
 
-class BasicArm(FunctionND):
+class Function_BasicArm(FunctionND):
     def __init__(self, name = "3dofarm", inputDim=3, outputDim=6,inDomainStart=[0,0], inDomainEnd=[2*np.pi,2*np.pi]):
         self.name = name
         self.inDomainStart = inDomainStart

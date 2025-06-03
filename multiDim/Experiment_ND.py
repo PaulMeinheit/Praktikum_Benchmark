@@ -585,30 +585,62 @@ class Experiment_ND:
         save_plot(fig, f"{self.name}_N{samplePoints}_error_vs_maxfreq.svg", save_dir)
 
 
-    def visualize2D(self, resolution=4000, save_path="plots"):
+    def visualize2D(self, resolution=400, save_path = "plots",ncols=4):
         """
-        Visualisiert die Funktion in 2D, falls inputDim=2 und outputDim=1.
+        Visualisiert die Ziel-Funktion und alle Approximatoren als Heatmaps in einem plot.
+        Funktioniert nur für 2D→1D Funktionen.
         """
         if self.function.inputDim != 2 or self.function.outputDim != 1:
             raise ValueError("Visualisierung nur für 2D→1D Funktionen unterstützt.")
 
+        # 2D-Gitter erzeugen
         x_vals = np.linspace(self.function.inDomainStart[0], self.function.inDomainEnd[0], resolution)
         y_vals = np.linspace(self.function.inDomainStart[1], self.function.inDomainEnd[1], resolution)
         X, Y = np.meshgrid(x_vals, y_vals)
         grid_points = np.stack([X.ravel(), Y.ravel()], axis=-1)
-        Z = self.approximators[0].predict(grid_points).reshape(resolution, resolution)
 
-        fig, ax = plt.subplots(figsize=(8, 6))
-        cmap = plt.get_cmap("plasma")  # Mandelbrot ist meist nur 0 oder 1
-        c = ax.imshow(Z, extent=(self.function.inDomainStart[0], self.function.inDomainEnd[0],
-                                 self.function.inDomainStart[1], self.function.inDomainEnd[1]),
-                      origin='lower', cmap=cmap, aspect='auto')
+        # Funktion und alle Approximatoren vorbereiten
+        titles = []
+        heatmaps = []
 
-        ax.set_xlabel("Re(c)")
-        ax.set_ylabel("x")
-        ax.set_title(f"Function {self.function.name} Plot")
+        # Originalfunktion
+        Z_func = self.function.eval(grid_points).reshape(resolution, resolution)
+        if self.function.logscale:
+            Z_func = self.apply_logscale(Z_func)
+        heatmaps.append(Z_func)
+        titles.append(self._label(self.function.name))
 
-        if save_path:
-            save_plot(fig,f"2D_Visualisation_Func{self.function.name}")
-        else:
-            plt.show()
+        # Approximatoren
+        for i, approximator in enumerate(self.approximators):
+            Z_pred = approximator.predict(grid_points).reshape(resolution, resolution)
+            Z_pred = self.apply_logscale(Z_pred)
+            name = f"{approximator.name}"
+            heatmaps.append(Z_pred)
+            titles.append(self._label(name))
+
+        # Plot-Grid vorbereiten
+        total_plots = len(heatmaps)
+        nrows = (total_plots + ncols - 1) // ncols
+        fig, axes = plt.subplots(nrows, ncols, figsize=(ncols * 4, nrows * 4), squeeze=False)
+
+        for idx, (Z, title) in enumerate(zip(heatmaps, titles)):
+            row = idx // ncols
+            col = idx % ncols
+            ax = axes[row][col]
+            im = ax.imshow(Z, extent=(self.function.inDomainStart[0], self.function.inDomainEnd[0],
+                                    self.function.inDomainStart[1], self.function.inDomainEnd[1]),
+                        origin='lower', cmap='plasma', aspect='auto')
+            ax.set_title(title)
+            ax.set_xlabel("x₁")
+            ax.set_ylabel("x₂")
+            fig.colorbar(im, ax=ax)
+
+        # Leere Plots entfernen (falls letzte Zeile unvollständig)
+        for idx in range(total_plots, nrows * ncols):
+            row = idx // ncols
+            col = idx % ncols
+            fig.delaxes(axes[row][col])
+
+        fig.tight_layout()
+        full_path = os.path.join(save_path, f"2D_Heatmaps_{self.function.name}.png")
+        save_plot(fig,f"Visualisation_2D_{self.function.name}")
