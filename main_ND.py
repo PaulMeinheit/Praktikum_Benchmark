@@ -14,6 +14,7 @@ from multiDim.ApproximatorTransformer import Approximator_Transformer
 import numpy as np
 import torch.nn as nn
 from multiDim.Function_Mandelbrot_2D import Function_Mandelbrot
+from multiDim.BasicArm import BasicArm
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available() :
@@ -43,10 +44,12 @@ def getApprox():
     approx_shepard = ShepardInterpolator([],30,power=3)
     approx_identity = Approximator_Identity_ND([])
     approx_transformer = Approximator_Transformer( params=[500, 500, [16, 16]], device = device)
-    apprx = [approx_identity]
-    for i in {3,10}:
-        for j in {10000,50000}:
-            for k in {1e-1}:
+    apprx = [approx_shepard]
+    return apprx
+    
+    for i in {3,10,30,50,100,300}:
+        for j in {10000,50000,100000,300000}:
+            for k in {1e-1,1e-2,1e-3}:
                 apprx.append(Approximator_Fourier_ND(params=[j,i],ridge_lambda=k))
     approx_fourier2 = Approximator_Fourier_ND(params=[500000,40])
     approx_transformer = Approximator_Transformer(params=[800,1000,[16,16]],num_layers=2,name ="Transformer")
@@ -65,6 +68,7 @@ def getFunc():
     function_BasicArm=Function_BasicArm()
     function_sin_4D = Function_Sin_4D()
     function_mandel = Function_Mandelbrot()
+    function_BasicArm = BasicArm()
     return function_BasicArm
 
 #exp = Experiment_ND("Fourier_Frequenzen_vs_Loss",[],getFunc(),logscale=True)
