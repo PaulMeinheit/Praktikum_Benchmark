@@ -7,7 +7,6 @@ from multiDim.ShepardInterpolator import ShepardInterpolator
 from multiDim.Approximator_Identity_ND import Approximator_Identity_ND
 from multiDim.Function_Rotation3D import Function_Rotation3D 
 from multiDim.Function_Periodic_Behaviour import Function_Periodic_Behaviour
-from multiDim.Function_Basic1DArm import Function_BasicArm
 import torch
 from multiDim.Approximator_Fourier_ND import Approximator_Fourier_ND
 from multiDim.ApproximatorTransformer import Approximator_Transformer
