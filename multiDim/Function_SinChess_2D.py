@@ -19,4 +19,4 @@ class Function_Sin_2D(FunctionND):
         x = inputs[:, 0]
         y = inputs[:, 1]
         
-        return self.format_output_shape(np.sin(x) * np.sin(y)*100)
+        return self.format_output_shape(np.sin(x*2.142)*150 + np.sin(3.125*y)*100)

@@ -95,14 +95,6 @@ def _train_nn_with_epochs(args):
 
     return (epochs, mse, max_norm, nn_approx)
 
-def save_plot(fig, filename, save_dir="plots", ext="svg", timestamp=True):
-    os.makedirs(save_dir, exist_ok=True)
-    base, _ = os.path.splitext(filename)
-    if timestamp:
-        base += "_" + time.strftime("%d-%m-%Y_%H-%M-%S")
-    full_path = os.path.join(save_dir, f"{base}.{ext}")
-    fig.savefig(full_path, bbox_inches="tight", format=ext)
-    plt.close(fig)
 
 
 def to_tensor_2d(array):
@@ -177,6 +169,16 @@ class Experiment_ND:
         self.results = []
         self.X = None
         self.Y_true = None
+    def save_plot(self,fig, filename, save_dir=None, ext="svg", timestamp=True):
+        if save_dir==None:
+            save_dir=f"{self.name}"
+        os.makedirs(save_dir, exist_ok=True)
+        base, _ = os.path.splitext(filename)
+        if timestamp:
+            base += "_" + time.strftime("%d-%m-%Y_%H-%M-%S")
+        full_path = os.path.join(save_dir, f"{base}.{ext}")
+        fig.savefig(full_path, bbox_inches="tight", format=ext)
+        plt.close(fig)
 
     def train(self):
         input_dim = self.function.inputDim
@@ -287,7 +289,7 @@ class Experiment_ND:
             fig.delaxes(axs[j])
 
         plt.tight_layout()
-        save_plot(fig, "Histograms")
+        self.save_plot(fig, "Histograms")
 
 
     def print_loss_summary(self, mode="mse"):
@@ -382,7 +384,7 @@ class Experiment_ND:
                 axs[i].grid(True)
 
             plt.tight_layout()
-            save_plot(fig, f"{name}_1d_slices")
+            self.save_plot(fig, f"{name}_1d_slices")
 
     def plot_pca_querschnitt_all_outputs(self, n_points=2000, n_cols=4, save_dir="plots"):
         X = self.X
@@ -450,7 +452,7 @@ class Experiment_ND:
             fig.delaxes(axs[j // n_cols, j % n_cols])
 
         plt.tight_layout(rect=[0, 0, 1, 0.95])
-        save_plot(fig, f"{self.name}_pca_querschnitt_all_outputs.svg", save_dir)
+        self.save_plot(fig, f"{self.name}_pca_querschnitt_all_outputs.svg", save_dir)
 
     def plot_norms_vs_epochs(self, epoch_list, sample_points, nodes_per_layer, activation_function=None, loss_fn_class=torch.nn.MSELoss, save_dir="plots"):
         if activation_function is None:
@@ -488,7 +490,7 @@ class Experiment_ND:
         ax.legend()
         plt.tight_layout()
 
-        save_plot(fig, f"{self.name}_error_vs_epochs_parallel.svg", save_dir)
+        self.save_plot(fig, f"{self.name}_error_vs_epochs_parallel.svg", save_dir)
 
     def plot_vector_fields_3D_all(self, names=None, n_per_axis=7, scale=0.2):
         """
@@ -538,7 +540,7 @@ class Experiment_ND:
         plt.tight_layout()
         plt.show()
         # Datei speichern
-        save_plot(fig, "vector_fields_3D_all.svg")
+        self.save_plot(fig, "vector_fields_3D_all.svg")
 
     def plot_norms_vs_fourier_freq(self,ridge_rate=1, max_freqs=30, samplePoints=50000,how_many_points_on_plot = 20,loss_fn_class=torch.nn.MSELoss, save_dir="plots",parallel=True):
         function_class = self.function.__class__
@@ -582,7 +584,7 @@ class Experiment_ND:
         ax.grid(True)
         ax.legend()
         plt.tight_layout()
-        save_plot(fig, f"{self.name}_N{samplePoints}_error_vs_maxfreq.svg", save_dir)
+        self.save_plot(fig, f"{self.name}_N{samplePoints}_error_vs_maxfreq.svg", save_dir)
 
 
     def visualize2D(self, resolution=400, save_path = "plots",ncols=4):
@@ -604,16 +606,16 @@ class Experiment_ND:
         heatmaps = []
 
         # Originalfunktion
-        Z_func = self.function.eval(grid_points).reshape(resolution, resolution)
-        if self.function.logscale:
-            Z_func = self.apply_logscale(Z_func)
+        Z_func = self.function.evaluate(grid_points).reshape(resolution, resolution)
+        
+        Z_func = self._apply_logscale(Z_func)
         heatmaps.append(Z_func)
         titles.append(self._label(self.function.name))
 
         # Approximatoren
         for i, approximator in enumerate(self.approximators):
             Z_pred = approximator.predict(grid_points).reshape(resolution, resolution)
-            Z_pred = self.apply_logscale(Z_pred)
+            Z_pred = self._apply_logscale(Z_pred)
             name = f"{approximator.name}"
             heatmaps.append(Z_pred)
             titles.append(self._label(name))
@@ -643,4 +645,4 @@ class Experiment_ND:
 
         fig.tight_layout()
         full_path = os.path.join(save_path, f"2D_Heatmaps_{self.function.name}.png")
-        save_plot(fig,f"Visualisation_2D_{self.function.name}")
+        self.save_plot(fig,f"Visualisation_2D_{self.function.name}")

@@ -68,8 +68,7 @@ def getFunc():
     function_BasicArm=Function_BasicArm()
     function_sin_4D = Function_Sin_4D()
     function_mandel = Function_Mandelbrot()
-    function_BasicArm = BasicArm()
-    return function_BasicArm
+    return function_sin_2D
 
 #exp = Experiment_ND("Fourier_Frequenzen_vs_Loss",[],getFunc(),logscale=True)
 #exp.plot_norms_vs_fourier_freq(how_many_points_on_plot= 15,parallel=False,max_freqs=300,ridge_rate=1e-1,samplePoints=20000)
