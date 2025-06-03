@@ -7,14 +7,14 @@ from multiDim.ShepardInterpolator import ShepardInterpolator
 from multiDim.Approximator_Identity_ND import Approximator_Identity_ND
 from multiDim.Function_Rotation3D import Function_Rotation3D 
 from multiDim.Function_Periodic_Behaviour import Function_Periodic_Behaviour
-from multiDim.BasicArm import Function_BasicArm
+from multiDim.Function_Basic1DArm import Function_BasicArm
 import torch
 from multiDim.Approximator_Fourier_ND import Approximator_Fourier_ND
 from multiDim.ApproximatorTransformer import Approximator_Transformer
 import numpy as np
 import torch.nn as nn
 from multiDim.Function_Mandelbrot_2D import Function_Mandelbrot
-from multiDim.BasicArm import BasicArm
+from multiDim.Function_Basic1DArm import Function_Basic1DArm
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available() :
@@ -65,7 +65,7 @@ def getFunc():
     function_multiDim=Function_MultiDimOutput()
     function_periodic = Function_Periodic_Behaviour()
     function_sin_2D = Function_Sin_2D()
-    function_BasicArm=Function_BasicArm()
+    function_BasicArm= Function_Basic1DArm()
     function_sin_4D = Function_Sin_4D()
     function_mandel = Function_Mandelbrot()
     return function_sin_2D

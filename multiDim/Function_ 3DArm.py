@@ -5,7 +5,7 @@ from ikpy.link import DHLink
 from ikpy.link import OriginLink
 from scipy.spatial.transform import Rotation as R
 
-class BasicArm(FunctionND):
+class Function_Basic1DArm(FunctionND):
     def __init__(self, name = "3dofarm", inputDim=1, outputDim=6,inDomainStart=[0], inDomainEnd=[2*np.pi]):
         self.name = name
         self.inDomainStart = inDomainStart
@@ -15,7 +15,9 @@ class BasicArm(FunctionND):
 
         self.my_chain = Chain(name='1-link-arm', active_links_mask = [False,True], links=[
             OriginLink(),
-            DHLink(name="joint1", d=0, a=1, alpha=0)])
+            DHLink(name="joint1", d=0, a=1, alpha=0),
+            DHLink(name="joint2", d=0, a=1, alpha=0),
+            DHLink(name="joint3", d=0, a=1, alpha=0)])
 
     def evaluate (self,input):
 
