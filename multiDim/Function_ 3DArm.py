@@ -6,7 +6,7 @@ from ikpy.link import OriginLink
 from scipy.spatial.transform import Rotation as R
 
 class Function_Basic1DArm(FunctionND):
-    def __init__(self, name = "3dofarm", inputDim=1, outputDim=6,inDomainStart=[0], inDomainEnd=[2*np.pi]):
+    def __init__(self, name = "3dofarm", inputDim=3, outputDim=6,inDomainStart=[0,0,0], inDomainEnd=[2*np.pi,2*np.pi,2*np.pi]):
         self.name = name
         self.inDomainStart = inDomainStart
         self.inDomainEnd = inDomainEnd
