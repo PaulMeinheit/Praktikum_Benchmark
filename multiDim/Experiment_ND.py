@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 #from sklearn.linear_model import LinearRegression
+from scipy.spatial.transform import Rotation as R
+
 from concurrent.futures import ProcessPoolExecutor
 from multiDim.Approximator_NN_ND import Approximator_NN_ND
 import copy
@@ -10,6 +12,9 @@ import time
 import os
 from itertools import combinations
 from sklearn.decomposition import PCA
+
+import matplotlib.cm as cm
+
 from mpl_toolkits.mplot3d import Axes3D 
 from math import ceil
 
@@ -646,3 +651,67 @@ class Experiment_ND:
         fig.tight_layout()
         full_path = os.path.join(save_path, f"2D_Heatmaps_{self.function.name}.png")
         self.save_plot(fig,f"Visualisation_2D_{self.function.name}")
+
+
+
+    def visualize_6D_poses_in_3D(self, n_poses=5, save_dir=None, arrow_length=0.5):
+        """
+        Visualisiert Position und Orientierung (als Pfeil) in 3D für jeden Approximator.
+        Funktioniert mit beliebiger Eingabedimension – es werden n_poses zufällige Eingaben generiert.
+        """
+
+        if self.function.outputDim != 6:
+            raise ValueError("Diese Visualisierung ist nur für Funktionen mit OutputDim=6 gedacht.")
+
+        input_dim = self.function.inputDim
+
+        # === 1. Zufällige Testeingaben generieren innerhalb des Eingabebereichs ===
+        low = np.array(self.function.inDomainStart)
+        high = np.array(self.function.inDomainEnd)
+        X = np.random.uniform(low, high, size=(n_poses, input_dim))
+
+        # === 2. Original berechnen
+        Y_true = self.function.evaluate(X)
+
+        # === 3. Approximator-Vorhersagen ===
+        Y_preds = []
+        for approximator in self.approximators:
+            Y_pred = approximator.predict(X)
+            Y_preds.append(Y_pred)
+
+        # === 4. Farben (eine pro Pose, gleich über alle Plots) ===
+        colors = cm.get_cmap('tab20', n_poses)
+
+        # === 5. Hilfsfunktion zum Zeichnen von 6D-Pose-Pfeilen ===
+        def plot_poses(ax, poses, title):
+            for i, pose in enumerate(poses):
+                position = pose[:3]
+                orientation = pose[3:]
+                r = R.from_euler('xyz', orientation, degrees=False)
+                direction = r.apply(np.array([arrow_length, 0, 0]))  # Vorwärtsvektor (x-Achse)
+                ax.quiver(*position, *direction, color=colors(i), length=1.0, normalize=True)
+            ax.set_title(title)
+            ax.set_xlim([-2, 2])
+            ax.set_ylim([-2, 2])
+            ax.set_zlim([-2, 2])
+            ax.set_xlabel("X")
+            ax.set_ylabel("Y")
+            ax.set_zlabel("Z")
+
+        # === 6. Figure mit Subplots erstellen ===
+        num_plots = 1 + len(self.approximators)
+        fig = plt.figure(figsize=(5 * num_plots, 5))
+
+        # Ground Truth
+        ax_true = fig.add_subplot(1, num_plots, 1, projection='3d')
+        plot_poses(ax_true, Y_true, "Ground Truth")
+
+        # Approximatoren
+        for i, (name, Y_pred) in enumerate(zip([apx.name for apx in self.approximators], Y_preds)):
+            ax = fig.add_subplot(1, num_plots, i + 2, projection='3d')
+            plot_poses(ax, Y_pred, name)
+
+        fig.suptitle(f"Robot Poses für {self.function.name} ({n_poses} Beispiele)", fontsize=16)
+        plt.tight_layout()
+
+        self.save_plot(fig, f"{self.name}_robot_poses_3D", save_dir)
