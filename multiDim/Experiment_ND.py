@@ -54,7 +54,6 @@ def _train_nn_with_epochs(args):
     loss_fn = loss_fn_class()
 
     nn_approx = Approximator_NN_ND(
-        name=f"NN_{epochs}_epochs",
         params=[epochs, sample_points, nodes_per_layer],
         activationFunction=activation_function,
         lossCriterium=loss_fn
@@ -162,7 +161,7 @@ def train_and_predict(args):
 
 class Experiment_ND:
     def __init__(self, name, approximators, function, loss_fn=torch.nn.MSELoss(),
-                 parallel=True,vmin=1e-17,vmax=1e50,logscale=False):
+                 parallel=False,vmin=1e-17,vmax=1e50,logscale=False):
         self.name = name
         self.approximators = approximators
         self.function = function
@@ -240,7 +239,7 @@ class Experiment_ND:
         return f"log10({base_label})" if self.logscale else base_label
 
 
-    def plot_error_histograms(self, bins="auto", loss_fn=None, save_dir="plots", max_cols=3):
+    def plot_error_histograms(self, bins="auto", loss_fn=None, save_dir=None, max_cols=3):
         os.makedirs(save_dir, exist_ok=True)
 
         Y_true = np.atleast_2d(self.Y_true)
@@ -294,7 +293,7 @@ class Experiment_ND:
             fig.delaxes(axs[j])
 
         plt.tight_layout()
-        self.save_plot(fig, "Histograms")
+        self.save_plot(fig, "Histograms",save_dir=save_dir)
 
 
     def print_loss_summary(self, mode="mse"):
@@ -333,7 +332,7 @@ class Experiment_ND:
             print(f"{name}: Loss = {loss_val:.6f}")
 
 
-    def plot_1d_slices(self, resolution=None,mode = "mean"):
+    def plot_1d_slices(self, resolution=None,mode = "median"):
         if self.X is None:
             raise ValueError("You must call train() before plotting.")
 
@@ -389,9 +388,9 @@ class Experiment_ND:
                 axs[i].grid(True)
 
             plt.tight_layout()
-            self.save_plot(fig, f"{name}_1d_slices")
+            self.save_plot(fig, f"{name}_1d_slices",save_dir=save_dir)
 
-    def plot_pca_querschnitt_all_outputs(self, n_points=2000, n_cols=4, save_dir="plots"):
+    def plot_pca_querschnitt_all_outputs(self, n_points=2000, n_cols=4, save_dir=None):
         X = self.X
         Y_true = self.Y_true
         output_dim = Y_true.shape[1] if Y_true.ndim > 1 else 1
@@ -457,9 +456,9 @@ class Experiment_ND:
             fig.delaxes(axs[j // n_cols, j % n_cols])
 
         plt.tight_layout(rect=[0, 0, 1, 0.95])
-        self.save_plot(fig, f"{self.name}_pca_querschnitt_all_outputs.svg", save_dir)
+        self.save_plot(fig, f"{self.name}_pca_querschnitt_all_outputs.svg", save_dir=save_dir)
 
-    def plot_norms_vs_epochs(self, epoch_list, sample_points, nodes_per_layer, activation_function=None, loss_fn_class=torch.nn.MSELoss, save_dir="plots"):
+    def plot_norms_vs_epochs(self, epoch_list, sample_points, nodes_per_layer, activation_function=None, loss_fn_class=torch.nn.MSELoss, save_dir=None,parallel=False):
         if activation_function is None:
             activation_function = torch.nn.ReLU()
 
@@ -472,9 +471,14 @@ class Experiment_ND:
             (epochs, sample_points, nodes_per_layer, activation_function, loss_fn_class, function_class, function_args,100000,"random")
             for epochs in epoch_list
         ]
+        if parallel:
+            print("🚀 Starte parallele Verarbeitung...")
+            with ProcessPoolExecutor() as executor:
+                results = list(executor.map(_train_nn_with_epochs, args_list))
+        else:
+            print("🧘 Starte sequentielle Verarbeitung...")
+            results = [_train_nn_with_epochs(args) for args in args_list]
 
-        with ProcessPoolExecutor() as executor:
-            results = list(executor.map(_train_nn_with_epochs, args_list))
 
         # Sortieren nach Epochenzahl (falls durcheinander)
         results.sort(key=lambda x: x[0])
@@ -489,33 +493,33 @@ class Experiment_ND:
         ax.plot(epochs_sorted, mse_losses, label="MSE Loss", marker='o')
         ax.plot(epochs_sorted, maxnorm_losses, label="Max Norm Loss", marker='s')
         ax.set_xlabel("Epochenzahl")
-        ax.set_ylabel(self._label("Fehler"))
-        ax.set_title(f"Fehler vs. Epochenzahl für NN Approximator\n({self.name})")
+        ax.set_ylabel(self._label("loss"))
+        ax.set_title(f"Loss vs. Epochen bei NN bei Funktion\n{self.function.name}")
         ax.grid(True)
         ax.legend()
         plt.tight_layout()
 
         self.save_plot(fig, f"{self.name}_error_vs_epochs_parallel.svg", save_dir)
 
-    def plot_vector_fields_3D_all(self, names=None, n_per_axis=7, scale=0.2):
+    def plot_vector_fields_3D_all(self, names=None, n_per_axis=7, scale=0.2, max_cols=3):
         """
         Plottet das 3D-Vektorfeld für alle Approximatoren, wenn inputDim=3 und outputDim=3.
-        
+
         Parameters:
         - names: Optional, Liste von Namen für die Plots
         - n_per_axis: Auflösung des Rasters
         - scale: Pfeillänge im Plot
+        - max_cols: Maximale Anzahl an Spalten im Subplot-Grid
         """
-        
+
         if not self.approximators:
             print("⚠️ Keine Approximatoren übergeben.")
             return
 
-        # Vorabprüfung: Alle Approximatoren müssen inputDim=3 und outputDim=3 haben
         for approximator in self.approximators:
             if self.function.inputDim != 3 or self.function.outputDim != 3:
                 print(f"⚠️ Approximator '{approximator.name}' hat nicht die Dimension 3→3. Überspringe Plot.")
-                return  # alternativ: continue für partielles Plotten
+                return
 
         # Raster erzeugen
         x = np.linspace(-1, 1, n_per_axis)
@@ -525,15 +529,18 @@ class Experiment_ND:
         grid_points = np.stack([X.ravel(), Y.ravel(), Z.ravel()], axis=1)
 
         num_models = len(self.approximators)
-        fig = plt.figure(figsize=(6 * num_models, 6))
+        n_cols = min(max_cols, num_models)
+        n_rows = (num_models + n_cols - 1) // n_cols
+
+        fig = plt.figure(figsize=(6 * n_cols, 6 * n_rows))
 
         for i, approximator in enumerate(self.approximators):
-            vectors = approximator.predict(grid_points)  # (N, 3)
+            vectors = approximator.predict(grid_points)
             U = vectors[:, 0].reshape(X.shape)
             V = vectors[:, 1].reshape(Y.shape)
             W = vectors[:, 2].reshape(Z.shape)
 
-            ax = fig.add_subplot(1, num_models, i + 1, projection='3d')
+            ax = fig.add_subplot(n_rows, n_cols, i + 1, projection='3d')
             ax.quiver(X, Y, Z, U, V, W, length=scale, normalize=True, color='blue')
             ax.set_xlabel("x")
             ax.set_ylabel("y")
@@ -544,10 +551,9 @@ class Experiment_ND:
         fig.suptitle("3D-Vektorfelder der Approximatoren", fontsize=16, y=1.02)
         plt.tight_layout()
         plt.show()
-        # Datei speichern
         self.save_plot(fig, "vector_fields_3D_all.svg")
 
-    def plot_norms_vs_fourier_freq(self,ridge_rate=1, max_freqs=30, samplePoints=50000,how_many_points_on_plot = 20,loss_fn_class=torch.nn.MSELoss, save_dir="plots",parallel=True):
+    def plot_norms_vs_fourier_freq(self,ridge_rate=1, max_freqs=30, samplePoints=50000,how_many_points_on_plot = 20,loss_fn_class=torch.nn.MSELoss, save_dir=None,parallel=True):
         function_class = self.function.__class__
         function_args = [self.function.name, self.function.inputDim, self.function.outputDim,
                         self.function.inDomainStart, self.function.inDomainEnd]
@@ -585,14 +591,14 @@ class Experiment_ND:
         ax.plot(freq_sorted, maxnorm_losses, label="Max-Loss", marker='s')
         ax.set_xlabel("Frequenzen für Training:{1,...,x}")
         ax.set_ylabel(self._label("Fehler"))
-        ax.set_title(f"Fehler vs. max. Fourier-Frequenz\n({self.name})")
+        ax.set_title(f"Fehler vs. max. Fourier-Frequenz bei \n{self.function.name}")
         ax.grid(True)
         ax.legend()
         plt.tight_layout()
         self.save_plot(fig, f"{self.name}_N{samplePoints}_error_vs_maxfreq.svg", save_dir)
 
 
-    def visualize2D(self, resolution=400, save_path = "plots",ncols=4):
+    def visualize2D(self, resolution=400, save_path = None,ncols=4):
         """
         Visualisiert die Ziel-Funktion und alle Approximatoren als Heatmaps in einem plot.
         Funktioniert nur für 2D→1D Funktionen.
@@ -654,12 +660,17 @@ class Experiment_ND:
 
 
 
-    def visualize_6D_poses_in_3D(self, n_poses=5, save_dir=None, arrow_length=0.5):
+    def visualize_6D_poses_in_3D(self, n_poses=5, save_dir=None, arrow_length=0.5,
+                              show_axis_projections=True, dot_size=30, dot_alpha=0.5):
         """
         Visualisiert Position und Orientierung (als Pfeil) in 3D für jeden Approximator.
         Funktioniert mit beliebiger Eingabedimension – es werden n_poses zufällige Eingaben generiert.
-        """
 
+        Zusätzliche Parameter:
+        - show_axis_projections: Zeigt Hilfspunkte auf X, Y, Z-Achse an
+        - dot_size: Größe dieser Punkte
+        - dot_alpha: Transparenz der Punkte
+        """
         if self.function.outputDim != 6:
             raise ValueError("Diese Visualisierung ist nur für Funktionen mit OutputDim=6 gedacht.")
 
@@ -674,10 +685,7 @@ class Experiment_ND:
         Y_true = self.function.evaluate(X)
 
         # === 3. Approximator-Vorhersagen ===
-        Y_preds = []
-        for approximator in self.approximators:
-            Y_pred = approximator.predict(X)
-            Y_preds.append(Y_pred)
+        Y_preds = [approximator.predict(X) for approximator in self.approximators]
 
         # === 4. Farben (eine pro Pose, gleich über alle Plots) ===
         colors = cm.get_cmap('tab20', n_poses)
@@ -687,9 +695,19 @@ class Experiment_ND:
             for i, pose in enumerate(poses):
                 position = pose[:3]
                 orientation = pose[3:]
+                x, y, z = position
                 r = R.from_euler('xyz', orientation, degrees=False)
-                direction = r.apply(np.array([arrow_length, 0, 0]))  # Vorwärtsvektor (x-Achse)
+                direction = r.apply(np.array([arrow_length, 0, 0]))  # x-Achse des Endeffektors
+
+                # Pfeil zeichnen
                 ax.quiver(*position, *direction, color=colors(i), length=1.0, normalize=True)
+
+                if show_axis_projections:
+                    # Projektionen auf die Achsen zeichnen
+                    ax.scatter([x], [0], [0], color=colors(i), marker='o', s=dot_size, alpha=dot_alpha)  # X
+                    ax.scatter([0], [y], [0], color=colors(i), marker='o', s=dot_size, alpha=dot_alpha)  # Y
+                    ax.scatter([0], [0], [z], color=colors(i), marker='o', s=dot_size, alpha=dot_alpha)  # Z
+
             ax.set_title(title)
             ax.set_xlim([-2, 2])
             ax.set_ylim([-2, 2])
@@ -704,7 +722,7 @@ class Experiment_ND:
 
         # Ground Truth
         ax_true = fig.add_subplot(1, num_plots, 1, projection='3d')
-        plot_poses(ax_true, Y_true, "Ground Truth")
+        plot_poses(ax_true, Y_true, f"{n_poses} original poses")
 
         # Approximatoren
         for i, (name, Y_pred) in enumerate(zip([apx.name for apx in self.approximators], Y_preds)):

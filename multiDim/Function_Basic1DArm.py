@@ -17,18 +17,19 @@ class Function_Basic1DArm(FunctionND):
             OriginLink(),
             DHLink(name="joint1", d=0, a=1, alpha=0)])
 
-    def evaluate (self,input):
-
+    def evaluate(self, input):
         num_samples = input.shape[0]
         output = np.empty((num_samples, 6))
 
-        for i in range(1,input.shape[1]):
-            T = self.my_chain.forward_kinematics(input[i])
+        for i in range(num_samples):
+            joint_angles = input[i]
+            full_joint_vector = [0.0] + joint_angles.tolist()  # prepend dummy for OriginLink
+            T = self.my_chain.forward_kinematics(full_joint_vector)
             position = T[:3, 3]
             rot_matrix = T[:3, :3]
             r = R.from_matrix(rot_matrix)
-            rpy = r.as_euler('xyz', False)  # XYZ = roll-pitch-yaw
-            pose_6d = np.concatenate((position, rpy))  # shape (6,)
-            output[i] = pose_6d 
+            rpy = r.as_euler('xyz', degrees=False)
+            pose_6d = np.concatenate((position, rpy))
+            output[i] = pose_6d
 
         return self.format_output_shape(output)

@@ -40,22 +40,22 @@ def startCasualExp():
     exp.plot_1d_slices(mode="median")
 
 def getApprox():
-    approx_shepard = ShepardInterpolator([],30,power=3)
+    approx_shepard = ShepardInterpolator([],300,power=3)
     approx_identity = Approximator_Identity_ND([])
-    approx_transformer = Approximator_Transformer( params=[500, 500, [16, 16]], device = device)
+    #approx_transformer = Approximator_Transformer( params=[500, 500, [16, 16]], device = device)
     apprx = [approx_identity,approx_shepard]
-    return apprx
+    #return apprx
     
-    for i in {3,10,30,50,100,300}:
-        for j in {10000,50000,100000,300000}:
-            for k in {1e-1,1e-2,1e-3}:
+    for i in {3,10,300}:
+        for j in {100000}:
+            for k in {1e-1,1e-2}:
                 apprx.append(Approximator_Fourier_ND(params=[j,i],ridge_lambda=k))
-    approx_fourier2 = Approximator_Fourier_ND(params=[500000,40])
-    approx_transformer = Approximator_Transformer(params=[800,1000,[16,16]],num_layers=2,name ="Transformer")
+    #return apprx
+    #apprx.append(Approximator_Transformer(params=[800,10000,[4,4]],num_layers=2,name ="Transformer"))
 
-    return apprx
+    #return apprx
     for i in {9000}:
-        for j in {10000}:
+        for j in {1000}:
             apprx.append(Approximator_NN_ND([i,j,[16,16]],activationFunction = nn.Sigmoid()))
     return apprx
 
@@ -72,9 +72,57 @@ def getFunc():
 #exp = Experiment_ND("Fourier_Frequenzen_vs_Loss",[],getFunc(),logscale=True)
 #exp.plot_norms_vs_fourier_freq(how_many_points_on_plot= 15,parallel=False,max_freqs=300,ridge_rate=1e-1,samplePoints=20000)
 #startCasualExp()
+def exp_robo_function():
+    print("Robo")
+    exp = Experiment_ND("Robo",getApprox(),getFunc(),parallel=False,logscale=False,loss_fn=torch.nn.SmoothL1Loss())
+    exp.train()
+    exp.visualize_6D_poses_in_3D()
+    exp.plot_error_histograms()
+    exp.plot_1d_slices()
+    exp.plot_pca_querschnitt_all_outputs()
+
+def exp_rotation_3D_function():
+    print("Rotation")
+    exp = Experiment_ND("Rotation_3D",getApprox(),Function_Rotation3D(),loss_fn=torch.nn.SmoothL1Loss())
+    exp.train()
+    exp.plot_error_histograms()
+    exp.plot_1d_slices()
+    exp.plot_pca_querschnitt_all_outputs()
+    exp.plot_vector_fields_3D_all()
 
 
+def exp_sinus_2D_function():
+    print("Sinus_2D")
+    exp = Experiment_ND("Sinus_2D",getApprox(),Function_Sin_2D(),loss_fn=torch.nn.SmoothL1Loss())
+    exp.train()
+    exp.plot_error_histograms()
+    exp.plot_1d_slices()
+    exp.plot_pca_querschnitt_all_outputs()
+    exp.visualize2D()
+    
+def exp_sinus_4D_function():
+    print("Sinus_4D")
+    exp = Experiment_ND("Sinus_4D",getApprox(),Function_Sin_2D(),loss_fn=torch.nn.SmoothL1Loss())
+    exp.train()
+    exp.plot_error_histograms()
+    exp.plot_1d_slices()
+    exp.plot_pca_querschnitt_all_outputs()    
 
-exp = Experiment_ND("Robo",getApprox(),getFunc(),parallel=False,logscale=False,loss_fn=torch.nn.SmoothL1Loss())
-exp.train()
-exp.visualize_6D_poses_in_3D()
+def exp_plotting_loss_vs_epochs():
+    print("NN_epochs")
+    exp = Experiment_ND("NN_epoch_vgl",[],Function_Periodic_Behaviour(),logscale=True,parallel=True)
+
+    exp.plot_norms_vs_epochs([1,10,100,200,400,800,1000,1200,1400,1600,1800,2000,2500,3000,3500,4000,10000],10000,[16,16,16])
+
+def exp_plotting_loss_vs_frequencies():
+    print("Fourier_Frequ")
+    exp = Experiment_ND("Fourier vgl",[],Function_Periodic_Behaviour(),logscale=True)
+
+    exp.plot_norms_vs_fourier_freq(ridge_rate=0.1,max_freqs=300,how_many_points_on_plot=20,parallel=False)
+
+#exp_plotting_loss_vs_frequencies()
+#exp_plotting_loss_vs_epochs()
+#exp_sinus_2D_function()
+#exp_sinus_4D_function()
+#exp_robo_function()
+#exp_rotation_3D_function()
