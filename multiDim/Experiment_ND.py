@@ -99,6 +99,12 @@ def _train_nn_with_epochs(args):
 
     return (epochs, mse, max_norm, nn_approx)
 
+def _sample_data(function, n_points):
+    X = np.random.uniform(low=function.inDomainStart, high=function.inDomainEnd, size=(n_points, function.inputDim))
+    Y = function.evaluate(X)
+    if Y.ndim == 1:
+        Y = Y[:, np.newaxis]
+    return X, Y
 
 
 def to_tensor_2d(array):
@@ -158,6 +164,35 @@ def train_and_predict(args):
     
     # Rückgabe mit dem trainierten Modell (Apprximator)
     return (apx.name, Y_pred, loss, apx)
+
+def worker_plot_error_vs_samples(args):
+    function, config, s ,fixed_epochs = args
+    model = Approximator_NN_ND(
+        params=[fixed_epochs, s, config["nodes_per_layer"], config.get("lr", 0.01)],
+        activationFunction=config.get("activation_function", torch.nn.ReLU()),
+        lossCriterium=config.get("loss_fn", torch.nn.MSELoss())
+    )
+    model.train(function)
+    X_test, Y_test = _sample_data(function, 1000)
+    preds = model.predict(X_test)
+    mse = np.mean((preds - Y_test) ** 2)
+    model.update_name_without_epochs_and_samplepoints()
+    return (model.name, s, mse)
+
+def worker_plot_error_vs_epochs(args):
+    function, config, epochs, fixed_samples = args
+    model = Approximator_NN_ND(
+        params=[epochs, fixed_samples, config["nodes_per_layer"], config.get("lr", 0.01)],
+        activationFunction=config.get("activation_function", torch.nn.ReLU()),
+        lossCriterium=config.get("loss_fn", torch.nn.MSELoss())
+    )
+    model.train(function)
+    X_test, Y_test = _sample_data(function, 1000)
+    preds = model.predict(X_test)
+    mse = np.mean((preds - Y_test) ** 2)
+    model.update_name_without_epochs_and_samplepoints()
+    return (model.name, epochs, mse)
+
 
 class Experiment_ND:
     def __init__(self, name, approximators, function, loss_fn=torch.nn.MSELoss(),
@@ -733,3 +768,86 @@ class Experiment_ND:
         plt.tight_layout()
 
         self.save_plot(fig, f"{self.name}_robot_poses_3D", save_dir)
+    def plot_error_vs_samples(self, model_configs, sample_counts, fixed_epochs,
+                                test_points=1000, parallel=False):
+        global fixed_epochs_global, X_test_global, Y_test_global
+        fixed_epochs_global = fixed_epochs
+        function = self.function
+        X_test_global, Y_test_global = _sample_data(function, test_points)
+
+        all_args = [(function, config, s,fixed_epochs) for config in model_configs for s in sample_counts]
+
+        if parallel:
+            with ProcessPoolExecutor() as executor:
+                output = list(executor.map(worker_plot_error_vs_samples, all_args))
+        else:
+            output = [worker_plot_error_vs_samples(arg) for arg in all_args]
+
+        results = {}
+        for name, s, mse in output:
+            if name not in results:
+                results[name] = []
+            results[name].append((s, mse))
+
+        for name in results:
+            # Sortiere nach Sample Count, damit die Reihenfolge stimmt!
+            results[name].sort(key=lambda x: x[0])
+            results[name] = [mse for _, mse in results[name]]
+
+        # Plotting
+        fig, ax = plt.subplots(figsize=(8, 5))
+        unique_names = set(results.keys())
+        if len(unique_names) != len(results):
+            raise ValueError(f"Nicht eindeutige Modellnamen erkannt: {unique_names}")
+
+        for name, errors in results.items():
+            ax.plot(sample_counts, np.log10(errors) if self.logscale else errors, label=name, marker='o')
+
+        ax.set_xlabel("Trainingspunkte")
+        ax.set_ylabel("log10(MSE)" if self.logscale else "MSE")
+        ax.set_title(f"Fehler vs. Trainingspunkte (Epochen={fixed_epochs})")
+        ax.grid(True)
+        ax.legend()
+        self.save_plot(fig, "error_vs_samples")
+
+
+    def plot_error_vs_epochs(self, model_configs, epoch_counts, fixed_samples,
+                             test_points=1000, parallel=False):
+        global fixed_samples_global, X_test_global, Y_test_global
+        fixed_samples_global = fixed_samples
+        function = self.function
+        X_test_global, Y_test_global = _sample_data(function, test_points)
+
+        all_args = [(function, config, e, fixed_samples) for config in model_configs for e in epoch_counts]
+
+        if parallel:
+            with ProcessPoolExecutor() as executor:
+                output = list(executor.map(worker_plot_error_vs_epochs, all_args))
+        else:
+            output = [worker_plot_error_vs_epochs(arg) for arg in all_args]
+
+        results = {}
+        for name, s, mse in output:
+            if name not in results:
+                results[name] = []
+            results[name].append((s, mse))
+
+        for name in results:
+            # Sortiere nach Sample Count, damit die Reihenfolge stimmt!
+            results[name].sort(key=lambda x: x[0])
+            results[name] = [mse for _, mse in results[name]]
+        # Plotting
+        fig, ax = plt.subplots(figsize=(8, 5))
+        unique_names = set(results.keys())
+        if len(unique_names) != len(results):
+            raise ValueError(f"Nicht eindeutige Modellnamen erkannt: {unique_names}")
+
+        for name, errors in results.items():
+            ax.plot(epoch_counts, np.log10(errors) if self.logscale else errors, label=name, marker='o')
+
+        ax.set_xlabel("Epochen")
+        ax.set_ylabel("log10(MSE)" if self.logscale else "MSE")
+        ax.set_title(f"Fehler vs. Epochen (Samples={fixed_samples})")
+        ax.grid(True)
+        ax.legend()
+        self.save_plot(fig, "error_vs_epochs")

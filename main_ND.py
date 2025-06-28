@@ -67,7 +67,7 @@ def getFunc():
     function_BasicArm= Function_Basic1DArm()
     function_sin_4D = Function_Sin_4D()
     function_mandel = Function_Mandelbrot()
-    return function_BasicArm
+    return function_sin_4D
 
 #exp = Experiment_ND("Fourier_Frequenzen_vs_Loss",[],getFunc(),logscale=True)
 #exp.plot_norms_vs_fourier_freq(how_many_points_on_plot= 15,parallel=False,max_freqs=300,ridge_rate=1e-1,samplePoints=20000)
@@ -126,3 +126,74 @@ def exp_plotting_loss_vs_frequencies():
 #exp_sinus_4D_function()
 #exp_robo_function()
 #exp_rotation_3D_function()
+
+experiment = Experiment_ND("TEstt",[],getFunc(),logscale=True)
+
+model_configs = [
+    {
+        "nodes_per_layer": [2, 2],
+        "activation_function": torch.nn.ReLU(),
+        "loss_fn": torch.nn.MSELoss(),
+        "lr": 0.01
+    },
+    {
+        "nodes_per_layer": [4,4],
+        "activation_function": torch.nn.ReLU(),
+        "loss_fn": torch.nn.L1Loss(),
+        "lr": 0.01
+    },
+    {
+        "nodes_per_layer": [8,8],
+        "activation_function": torch.nn.ReLU(),
+        "loss_fn": torch.nn.L1Loss(),
+        "lr": 0.01
+    },
+    {
+        "nodes_per_layer": [16,16],
+        "activation_function": torch.nn.ReLU(),
+        "loss_fn": torch.nn.L1Loss(),
+        "lr": 0.01
+    },
+    {
+        "nodes_per_layer": [32,32],
+        "activation_function": torch.nn.ReLU(),
+        "loss_fn": torch.nn.L1Loss(),
+        "lr": 0.01
+    },
+    {
+        "nodes_per_layer": [64,64],
+        "activation_function": torch.nn.Tanh(),
+        "loss_fn": torch.nn.L1Loss(),
+        "lr": 0.01
+    },
+    {
+        "nodes_per_layer": [4,4,4],
+        "activation_function": torch.nn.ReLU(),
+        "loss_fn": torch.nn.L1Loss(),
+        "lr": 0.01
+    },
+    {
+        "nodes_per_layer": [8,8,8],
+        "activation_function": torch.nn.ReLU(),
+        "loss_fn": torch.nn.L1Loss(),
+        "lr": 0.01
+    },
+    {
+        "nodes_per_layer": [6,6,6,6],
+        "activation_function": torch.nn.ReLU(),
+        "loss_fn": torch.nn.L1Loss(),
+        "lr": 0.01
+    }
+]
+
+
+experiment.plot_error_vs_epochs(
+    model_configs=model_configs,
+    epoch_counts=[50, 100, 200,300,400,500,1000,1200,1400,1600,3000],
+    fixed_samples=300,parallel=True)
+
+experiment.plot_error_vs_samples(
+    model_configs=model_configs,
+    sample_counts=[50, 100, 200,300,400,500,600,700,800,900,1000],
+    fixed_epochs=3000,parallel=True
+)
