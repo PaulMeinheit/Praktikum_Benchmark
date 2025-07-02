@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import torch
 #from sklearn.linear_model import LinearRegression
 from scipy.spatial.transform import Rotation as R
-
+from multiDim.Approximator_NN_ND_Cum import Approximator_NN_ND_Cum
 from concurrent.futures import ProcessPoolExecutor
 from multiDim.Approximator_NN_ND import Approximator_NN_ND
 import copy
@@ -180,18 +180,30 @@ def worker_plot_error_vs_samples(args):
     return (model.name, s, mse)
 
 def worker_plot_error_vs_epochs(args):
-    function, config, epochs, fixed_samples = args
-    model = Approximator_NN_ND(
-        params=[epochs, fixed_samples, config["nodes_per_layer"], config.get("lr", 0.01)],
+    function, config, epoch_list, fixed_samples = args
+    model = Approximator_NN_ND_Cum(  # Achtung: benutze deine neue Klasse!
+        params=[1, fixed_samples, config["nodes_per_layer"], config.get("lr", 0.01)],
         activationFunction=config.get("activation_function", torch.nn.ReLU()),
         lossCriterium=config.get("loss_fn", torch.nn.MSELoss())
     )
-    model.train(function)
-    X_test, Y_test = _sample_data(function, 1000)
-    preds = model.predict(X_test)
-    mse = np.mean((preds - Y_test) ** 2)
-    model.update_name_without_epochs_and_samplepoints()
-    return (model.name, epochs, mse)
+    results = []
+
+    # Ein Modell, wiederholtes Training
+    total_epochs_trained = 0
+    for e in epoch_list:
+        additional_epochs = e - total_epochs_trained
+        if additional_epochs <= 0:
+            raise ValueError("Epoch counts müssen strikt aufsteigend sein!")
+        model.epochs = additional_epochs
+        model.train(function)
+        X_test, Y_test = _sample_data(function, 1000)
+        preds = model.predict(X_test)
+        mse = np.mean((preds - Y_test) ** 2)
+        model.update_name_without_epochs_and_samplepoints()
+        results.append((model.name, e, mse))
+        total_epochs_trained = e
+
+    return results
 
 
 class Experiment_ND:
@@ -808,7 +820,7 @@ class Experiment_ND:
         ax.set_title(f"Fehler vs. Trainingspunkte (Epochen={fixed_epochs})")
         ax.grid(True)
         ax.legend()
-        self.save_plot(fig, "error_vs_samples")
+        self.save_plot(fig, "error_vs_samples "+self.function.name)
 
 
     def plot_error_vs_epochs(self, model_configs, epoch_counts, fixed_samples,
@@ -819,13 +831,16 @@ class Experiment_ND:
         X_test_global, Y_test_global = _sample_data(function, test_points)
 
         all_args = [(function, config, e, fixed_samples) for config in model_configs for e in epoch_counts]
-
         if parallel:
             with ProcessPoolExecutor() as executor:
-                output = list(executor.map(worker_plot_error_vs_epochs, all_args))
+                output_lists = list(executor.map(worker_plot_error_vs_epochs, all_args))
         else:
-            output = [worker_plot_error_vs_epochs(arg) for arg in all_args]
+            output_lists = [worker_plot_error_vs_epochs(arg) for arg in all_args]
 
+        # output_lists ist eine Liste von Listen – jetzt alles in eine Liste packen
+        output = [item for sublist in output_lists for item in sublist]
+        # Ergebnisse in ein Dictionary umwandeln
+        # Schlüssel sind die Modellnamen, Werte sind Listen von (Sample Count, MSE)
         results = {}
         for name, s, mse in output:
             if name not in results:
@@ -850,4 +865,4 @@ class Experiment_ND:
         ax.set_title(f"Fehler vs. Epochen (Samples={fixed_samples})")
         ax.grid(True)
         ax.legend()
-        self.save_plot(fig, "error_vs_epochs")
+        self.save_plot(fig, "error_vs_epochs "+self.function.name)

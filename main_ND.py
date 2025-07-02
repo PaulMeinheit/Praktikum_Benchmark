@@ -127,73 +127,77 @@ def exp_plotting_loss_vs_frequencies():
 #exp_robo_function()
 #exp_rotation_3D_function()
 
-experiment = Experiment_ND("TEstt",[],getFunc(),logscale=True)
 
-model_configs = [
-    {
-        "nodes_per_layer": [2, 2],
-        "activation_function": torch.nn.ReLU(),
-        "loss_fn": torch.nn.MSELoss(),
-        "lr": 0.01
-    },
-    {
-        "nodes_per_layer": [4,4],
-        "activation_function": torch.nn.ReLU(),
-        "loss_fn": torch.nn.L1Loss(),
-        "lr": 0.01
-    },
-    {
-        "nodes_per_layer": [8,8],
-        "activation_function": torch.nn.ReLU(),
-        "loss_fn": torch.nn.L1Loss(),
-        "lr": 0.01
-    },
-    {
-        "nodes_per_layer": [16,16],
-        "activation_function": torch.nn.ReLU(),
-        "loss_fn": torch.nn.L1Loss(),
-        "lr": 0.01
-    },
-    {
-        "nodes_per_layer": [32,32],
-        "activation_function": torch.nn.ReLU(),
-        "loss_fn": torch.nn.L1Loss(),
-        "lr": 0.01
-    },
-    {
-        "nodes_per_layer": [64,64],
-        "activation_function": torch.nn.Tanh(),
-        "loss_fn": torch.nn.L1Loss(),
-        "lr": 0.01
-    },
-    {
-        "nodes_per_layer": [4,4,4],
-        "activation_function": torch.nn.ReLU(),
-        "loss_fn": torch.nn.L1Loss(),
-        "lr": 0.01
-    },
-    {
-        "nodes_per_layer": [8,8,8],
-        "activation_function": torch.nn.ReLU(),
-        "loss_fn": torch.nn.L1Loss(),
-        "lr": 0.01
-    },
-    {
-        "nodes_per_layer": [6,6,6,6],
-        "activation_function": torch.nn.ReLU(),
-        "loss_fn": torch.nn.L1Loss(),
-        "lr": 0.01
-    }
-]
+def plotEpochsAndStuffVsFunction(function):
 
+    experiment = Experiment_ND("All_Functions_NNs",[],function,logscale=True)
 
-experiment.plot_error_vs_epochs(
+    model_configs = [
+        {
+            "nodes_per_layer": [2, 2],
+            "activation_function": torch.nn.ReLU(),
+            "loss_fn": torch.nn.MSELoss(),
+            "lr": 0.01
+        },
+        {
+            "nodes_per_layer": [4,4],
+            "activation_function": torch.nn.ReLU(),
+            "loss_fn": torch.nn.L1Loss(),
+            "lr": 0.01
+        },
+        {
+            "nodes_per_layer": [8,8],
+            "activation_function": torch.nn.ReLU(),
+            "loss_fn": torch.nn.L1Loss(),
+            "lr": 0.01
+        },
+        {
+            "nodes_per_layer": [16,16],
+            "activation_function": torch.nn.ReLU(),
+            "loss_fn": torch.nn.L1Loss(),
+            "lr": 0.01
+        },
+        {
+            "nodes_per_layer": [32,32],
+            "activation_function": torch.nn.ReLU(),
+            "loss_fn": torch.nn.L1Loss(),
+            "lr": 0.01
+        },
+        {
+            "nodes_per_layer": [64,64],
+            "activation_function": torch.nn.Tanh(),
+            "loss_fn": torch.nn.L1Loss(),
+            "lr": 0.01
+        },
+        {
+            "nodes_per_layer": [4,4,4],
+            "activation_function": torch.nn.ReLU(),
+            "loss_fn": torch.nn.L1Loss(),
+            "lr": 0.01
+        },
+        {
+            "nodes_per_layer": [8,8,8],
+            "activation_function": torch.nn.ReLU(),
+            "loss_fn": torch.nn.L1Loss(),
+            "lr": 0.01
+        },
+        {
+            "nodes_per_layer": [6,6,6,6],
+            "activation_function": torch.nn.ReLU(),
+            "loss_fn": torch.nn.L1Loss(),
+            "lr": 0.01
+        }
+    ]
+    experiment.plot_error_vs_epochs(
     model_configs=model_configs,
-    epoch_counts=[50, 100, 200,300,400,500,1000,1200,1400,1600,3000],
-    fixed_samples=300,parallel=True)
+    epoch_counts=[50, 100, 200,300,400,500,1000,1200,1400,1600,3000,6000,7000,8000,9000,10000],
+    fixed_samples=1500,parallel=True)
 
-experiment.plot_error_vs_samples(
-    model_configs=model_configs,
-    sample_counts=[50, 100, 200,300,400,500,600,700,800,900,1000],
-    fixed_epochs=3000,parallel=True
-)
+    #experiment.plot_error_vs_samples(
+    #    model_configs=model_configs,
+    #    sample_counts=[50, 100, 200,300,400,500,600,700,800,900,1000],
+    #    fixed_epochs=4000,parallel=True
+    #)
+
+for func in [Function_Sin_2D(), Function_Periodic_Behaviour(), Function_Sin_4D()]:
+    plotEpochsAndStuffVsFunction(func)
