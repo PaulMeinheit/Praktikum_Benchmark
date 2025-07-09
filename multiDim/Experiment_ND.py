@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import torch
 #from sklearn.linear_model import LinearRegression
 from scipy.spatial.transform import Rotation as R
-from multiDim.Approximator_NN_ND_Cum import Approximator_NN_ND_Cum
+
 from concurrent.futures import ProcessPoolExecutor
 from multiDim.Approximator_NN_ND import Approximator_NN_ND
 import copy
@@ -180,30 +180,18 @@ def worker_plot_error_vs_samples(args):
     return (model.name, s, mse)
 
 def worker_plot_error_vs_epochs(args):
-    function, config, epoch_list, fixed_samples = args
-    model = Approximator_NN_ND_Cum(  # Achtung: benutze deine neue Klasse!
-        params=[1, fixed_samples, config["nodes_per_layer"], config.get("lr", 0.01)],
+    function, config, epochs, fixed_samples = args
+    model = Approximator_NN_ND(
+        params=[epochs, fixed_samples, config["nodes_per_layer"], config.get("lr", 0.01)],
         activationFunction=config.get("activation_function", torch.nn.ReLU()),
         lossCriterium=config.get("loss_fn", torch.nn.MSELoss())
     )
-    results = []
-
-    # Ein Modell, wiederholtes Training
-    total_epochs_trained = 0
-    for e in epoch_list:
-        additional_epochs = e - total_epochs_trained
-        if additional_epochs <= 0:
-            raise ValueError("Epoch counts müssen strikt aufsteigend sein!")
-        model.epochs = additional_epochs
-        model.train(function)
-        X_test, Y_test = _sample_data(function, 1000)
-        preds = model.predict(X_test)
-        mse = np.mean((preds - Y_test) ** 2)
-        model.update_name_without_epochs_and_samplepoints()
-        results.append((model.name, e, mse))
-        total_epochs_trained = e
-
-    return results
+    model.train(function)
+    X_test, Y_test = _sample_data(function, 1000)
+    preds = model.predict(X_test)
+    mse = np.mean((preds - Y_test) ** 2)
+    model.update_name_without_epochs_and_samplepoints()
+    return (model.name, epochs, mse)
 
 
 class Experiment_ND:
@@ -470,7 +458,7 @@ class Experiment_ND:
             pred_vals = np.atleast_2d(pred_vals)
             if output_dim == 1:
                 pred_vals = pred_vals.reshape(-1)
-            pred_vals = self._apply_logscale(pred_vals)     
+            pred_vals = self._apply_logscale(preds)     
             preds[res['name']] = pred_vals
 
         # Plotten je Output-Dimension
@@ -780,14 +768,16 @@ class Experiment_ND:
         plt.tight_layout()
 
         self.save_plot(fig, f"{self.name}_robot_poses_3D", save_dir)
+  
+  
     def plot_error_vs_samples(self, model_configs, sample_counts, fixed_epochs,
-                                test_points=1000, parallel=False):
+                         test_points=1000, parallel=False):
         global fixed_epochs_global, X_test_global, Y_test_global
         fixed_epochs_global = fixed_epochs
         function = self.function
         X_test_global, Y_test_global = _sample_data(function, test_points)
 
-        all_args = [(function, config, s,fixed_epochs) for config in model_configs for s in sample_counts]
+        all_args = [(function, config, s, fixed_epochs) for config in model_configs for s in sample_counts]
 
         if parallel:
             with ProcessPoolExecutor() as executor:
@@ -802,45 +792,48 @@ class Experiment_ND:
             results[name].append((s, mse))
 
         for name in results:
-            # Sortiere nach Sample Count, damit die Reihenfolge stimmt!
             results[name].sort(key=lambda x: x[0])
             results[name] = [mse for _, mse in results[name]]
 
-        # Plotting
-        fig, ax = plt.subplots(figsize=(8, 5))
-        unique_names = set(results.keys())
-        if len(unique_names) != len(results):
-            raise ValueError(f"Nicht eindeutige Modellnamen erkannt: {unique_names}")
+        # --- Auswahl der besten und schlechtesten Modelle ---
+        model_errors = {name: np.array(errors) for name, errors in results.items()}
+        # Bestes Modell: niedrigstes Minimum
+        best_models = sorted(model_errors, key=lambda n: model_errors[n].min())[:2]
+        # Schlechtestes Modell: höchstes Maximum
+        worst_models = sorted(model_errors, key=lambda n: model_errors[n].max(), reverse=True)[:2]
+        highlight_models = set(best_models + worst_models)
 
+        # --- Plotten ---
+        fig, ax = plt.subplots(figsize=(8, 5))
         for name, errors in results.items():
-            ax.plot(sample_counts, np.log10(errors) if self.logscale else errors, label=name, marker='o')
+            if name in highlight_models:
+                ax.plot(sample_counts, np.log10(errors) if self.logscale else errors, label=name, marker='o', linewidth=2)
+            else:
+                ax.plot(sample_counts, np.log10(errors) if self.logscale else errors, color='gray', alpha=0.3, linewidth=1)
 
         ax.set_xlabel("Trainingspunkte")
         ax.set_ylabel("log10(MSE)" if self.logscale else "MSE")
         ax.set_title(f"Fehler vs. Trainingspunkte (Epochen={fixed_epochs})")
         ax.grid(True)
         ax.legend()
-        self.save_plot(fig, "error_vs_samples "+self.function.name)
+        self.save_plot(fig, "error_vs_samples"+self.function.name)
 
 
     def plot_error_vs_epochs(self, model_configs, epoch_counts, fixed_samples,
-                             test_points=1000, parallel=False):
+                        test_points=1000, parallel=False):
         global fixed_samples_global, X_test_global, Y_test_global
         fixed_samples_global = fixed_samples
         function = self.function
         X_test_global, Y_test_global = _sample_data(function, test_points)
 
         all_args = [(function, config, e, fixed_samples) for config in model_configs for e in epoch_counts]
+
         if parallel:
             with ProcessPoolExecutor() as executor:
-                output_lists = list(executor.map(worker_plot_error_vs_epochs, all_args))
+                output = list(executor.map(worker_plot_error_vs_epochs, all_args))
         else:
-            output_lists = [worker_plot_error_vs_epochs(arg) for arg in all_args]
+            output = [worker_plot_error_vs_epochs(arg) for arg in all_args]
 
-        # output_lists ist eine Liste von Listen – jetzt alles in eine Liste packen
-        output = [item for sublist in output_lists for item in sublist]
-        # Ergebnisse in ein Dictionary umwandeln
-        # Schlüssel sind die Modellnamen, Werte sind Listen von (Sample Count, MSE)
         results = {}
         for name, s, mse in output:
             if name not in results:
@@ -848,21 +841,29 @@ class Experiment_ND:
             results[name].append((s, mse))
 
         for name in results:
-            # Sortiere nach Sample Count, damit die Reihenfolge stimmt!
             results[name].sort(key=lambda x: x[0])
             results[name] = [mse for _, mse in results[name]]
-        # Plotting
-        fig, ax = plt.subplots(figsize=(8, 5))
-        unique_names = set(results.keys())
-        if len(unique_names) != len(results):
-            raise ValueError(f"Nicht eindeutige Modellnamen erkannt: {unique_names}")
 
+        # --- Auswahl der besten und schlechtesten Modelle ---
+        # Fehler als np.array für einfaches Min/Max
+        model_errors = {name: np.array(errors) for name, errors in results.items()}
+        # Bestes Modell: niedrigstes Minimum
+        best_models = sorted(model_errors, key=lambda n: model_errors[n].min())[:2]
+        # Schlechtestes Modell: höchstes Maximum
+        worst_models = sorted(model_errors, key=lambda n: model_errors[n].max(), reverse=True)[:2]
+        highlight_models = set(best_models + worst_models)
+
+        # --- Plotten ---
+        fig, ax = plt.subplots(figsize=(8, 5))
         for name, errors in results.items():
-            ax.plot(epoch_counts, np.log10(errors) if self.logscale else errors, label=name, marker='o')
+            if name in highlight_models:
+                ax.plot(epoch_counts, np.log10(errors) if self.logscale else errors, label=name, marker='o', linewidth=2)
+            else:
+                ax.plot(epoch_counts, np.log10(errors) if self.logscale else errors, color='gray', alpha=0.3, linewidth=1)
 
         ax.set_xlabel("Epochen")
         ax.set_ylabel("log10(MSE)" if self.logscale else "MSE")
         ax.set_title(f"Fehler vs. Epochen (Samples={fixed_samples})")
         ax.grid(True)
         ax.legend()
-        self.save_plot(fig, "error_vs_epochs "+self.function.name)
+        self.save_plot(fig, "error_vs_epochs"+self.function.name)

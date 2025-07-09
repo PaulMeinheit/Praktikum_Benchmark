@@ -190,14 +190,14 @@ def plotEpochsAndStuffVsFunction(function):
     ]
     experiment.plot_error_vs_epochs(
     model_configs=model_configs,
-    epoch_counts=[50, 100, 200,300,400,500,1000,1200,1400,1600,3000,6000,7000,8000,9000,10000],
-    fixed_samples=1500,parallel=True)
+    epoch_counts=[50, 100, 200,300,400,500,1000,1200,1400,1600,3000,6000,7000,8000,9000,10000,11000,12000,13000,14000,15000,16000,17000,18000,19000,20000, 25000, 30000,35000, 40000,45000,50000],
+    fixed_samples=50,parallel=True)
 
-    #experiment.plot_error_vs_samples(
-    #    model_configs=model_configs,
-    #    sample_counts=[50, 100, 200,300,400,500,600,700,800,900,1000],
-    #    fixed_epochs=4000,parallel=True
-    #)
+    experiment.plot_error_vs_samples(
+        model_configs=model_configs,
+        sample_counts=[50, 100, 200,300,400,500,600,700,800,900,1000,1500,2000,2500,3000,3500,4000,4500,5000, 6000, 7000, 8000, 9000, 10000, 15000, 20000, 25000, 30000],
+        fixed_epochs=20,parallel=True
+    )
 
-for func in [Function_Sin_2D(), Function_Periodic_Behaviour(), Function_Sin_4D()]:
+for func in [Function_Sin_2D(), Function_Periodic_Behaviour(), Function_Sin_4D(), Function_Rotation3D(), Function_Mandelbrot(), Function_Basic1DArm(), Function_MultiDimOutput()]:
     plotEpochsAndStuffVsFunction(func)
