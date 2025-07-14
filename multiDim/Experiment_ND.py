@@ -780,7 +780,7 @@ class Experiment_ND:
         all_args = [(function, config, s, fixed_epochs) for config in model_configs for s in sample_counts]
 
         if parallel:
-            with ProcessPoolExecutor() as executor:
+            with ProcessPoolExecutor(max_workers=6) as executor:
                 output = list(executor.map(worker_plot_error_vs_samples, all_args))
         else:
             output = [worker_plot_error_vs_samples(arg) for arg in all_args]
@@ -829,7 +829,7 @@ class Experiment_ND:
         all_args = [(function, config, e, fixed_samples) for config in model_configs for e in epoch_counts]
 
         if parallel:
-            with ProcessPoolExecutor() as executor:
+            with ProcessPoolExecutor(max_workers=6) as executor:
                 output = list(executor.map(worker_plot_error_vs_epochs, all_args))
         else:
             output = [worker_plot_error_vs_epochs(arg) for arg in all_args]
