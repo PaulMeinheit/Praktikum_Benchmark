@@ -194,21 +194,17 @@ def plotEpochsAndStuffVsFunction(function):
             "lr": 0.01
         }
     ]
-    experiment.plot_error_vs_samples(
-        model_configs=model_configs,
-        sample_counts=[50, 100, 200],
-        fixed_epochs=1000,parallel=False
-    )
+
 
     experiment.plot_error_vs_epochs(
     model_configs=model_configs,
-    epoch_counts=[50, 100, 200,300,400,500,1000,1200,1400,1600,3000,6000,7000,8000,9000],
-    fixed_samples=5000,parallel=False)
+    epoch_counts=[50, 100, 200,300,400,500,1000,1200,1400,1600,3000,6000,7000,8000,9000,10000,12000,14000,16000,18000,20000],
+    fixed_samples=5000,parallel=True)
 
     experiment.plot_error_vs_samples(
         model_configs=model_configs,
-        sample_counts=[50, 100, 200,300,400,500,600,700,800,900,1000,1500,2000,2500,3000,3500,4000,4500,5000,5500],
-        fixed_epochs=5000,parallel=False
+        sample_counts=[50, 100, 200,300,400,500,600,700,800,900,1000,1500,2000,2500,3000,3500,4000,4500,5000,5500,6000,6500,7000,7500,8000],
+        fixed_epochs=5000,parallel=True
     )
 
 for func in [Function_Sin_2D(), Function_Periodic_Behaviour(), Function_Sin_4D(), Function_Rotation3D(), Function_Mandelbrot(), Function_Basic1DArm(), Function_MultiDimOutput()]:
