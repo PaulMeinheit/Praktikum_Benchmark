@@ -224,7 +224,7 @@ def clusterShit():
         plotEpochsAndStuffVsFunction(func)
 
 
-dgl_visualizer = DGL_Visualizer("3D_Vector_Fields", getApprox(),Function_Lorentz_DGL(),loss_fn=torch.nn.SmoothL1Loss(), parallel= True)
+dgl_visualizer = DGL_Visualizer("3D_Vector_Fields", getApprox(),Function_Lorentz_DGL(),loss_fn=torch.nn.SmoothL1Loss(), parallel= False)
 dgl_visualizer.train()
 
 dgl_visualizer.plot_trajectories_video(n_steps=1000,delta=0.001,fps=80,combine=True)
