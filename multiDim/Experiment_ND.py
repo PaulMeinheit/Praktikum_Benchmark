@@ -4,8 +4,8 @@ import torch
 #from sklearn.linear_model import LinearRegression
 from scipy.spatial.transform import Rotation as R
 
-from concurrent.futures import ProcessPoolExecutor
 from multiDim.Approximator_NN_ND import Approximator_NN_ND
+from concurrent.futures import ProcessPoolExecutor
 import copy
 from multiDim.Approximator_Fourier_ND import Approximator_Fourier_ND
 import time
@@ -275,7 +275,6 @@ class Experiment_ND:
 
 
     def plot_error_histograms(self, bins="auto", loss_fn=None, save_dir=None, max_cols=3):
-        os.makedirs(save_dir, exist_ok=True)
 
         Y_true = np.atleast_2d(self.Y_true)
 
@@ -328,7 +327,7 @@ class Experiment_ND:
             fig.delaxes(axs[j])
 
         plt.tight_layout()
-        self.save_plot(fig, "Histograms",save_dir=save_dir)
+        self.save_plot(fig, "Histograms")
 
 
     def print_loss_summary(self, mode="mse"):
@@ -423,7 +422,7 @@ class Experiment_ND:
                 axs[i].grid(True)
 
             plt.tight_layout()
-            self.save_plot(fig, f"{name}_1d_slices",save_dir=save_dir)
+            self.save_plot(fig, f"{name}_1d_slices")
 
     def plot_pca_querschnitt_all_outputs(self, n_points=2000, n_cols=4, save_dir=None):
         X = self.X
@@ -458,7 +457,7 @@ class Experiment_ND:
             pred_vals = np.atleast_2d(pred_vals)
             if output_dim == 1:
                 pred_vals = pred_vals.reshape(-1)
-            pred_vals = self._apply_logscale(preds)     
+            pred_vals = self._apply_logscale(pred_vals)     
             preds[res['name']] = pred_vals
 
         # Plotten je Output-Dimension
@@ -860,7 +859,7 @@ class Experiment_ND:
                 ax.plot(epoch_counts, np.log10(errors) if self.logscale else errors, label=name, marker='o', linewidth=2)
             else:
                 ax.plot(epoch_counts, np.log10(errors) if self.logscale else errors, color='gray', alpha=0.3, linewidth=1)
-
+            
         ax.set_xlabel("Epochen")
         ax.set_ylabel("log10(MSE)" if self.logscale else "MSE")
         ax.set_title(f"Fehler vs. Epochen (Samples={fixed_samples})")

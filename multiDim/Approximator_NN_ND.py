@@ -72,6 +72,7 @@ class Approximator_NN_ND(ApproximatorND):
         
         self.epochSum += self.epochs
         self.update_name()
+
     def predict(self, inputs):
         """
         inputs: np.ndarray mit Form (n, inputDim)

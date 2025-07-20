@@ -12,8 +12,10 @@ from multiDim.Approximator_Fourier_ND import Approximator_Fourier_ND
 from multiDim.ApproximatorTransformer import Approximator_Transformer
 import numpy as np
 import torch.nn as nn
+from multiDim.DGL_Visualizer import DGL_Visualizer
 from multiDim.Function_Mandelbrot_2D import Function_Mandelbrot
 from multiDim.Function_Basic1DArm import Function_Basic1DArm
+from multiDim.Function_DGL import Function_Lorentz_DGL
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available() :
@@ -40,23 +42,27 @@ def startCasualExp():
     exp.plot_1d_slices(mode="median")
 
 def getApprox():
-    approx_shepard = ShepardInterpolator([],300,power=3)
+    approx_shepard = ShepardInterpolator([],20000,power=5)
     approx_identity = Approximator_Identity_ND([])
+    #apprx = []
     #approx_transformer = Approximator_Transformer( params=[500, 500, [16, 16]], device = device)
-    apprx = [approx_identity,approx_shepard]
-    #return apprx
-    
-    for i in {3,10,300}:
-        for j in {100000}:
-            for k in {1e-1,1e-2}:
-                apprx.append(Approximator_Fourier_ND(params=[j,i],ridge_lambda=k))
-    #return apprx
-    #apprx.append(Approximator_Transformer(params=[800,10000,[4,4]],num_layers=2,name ="Transformer"))
-
+    apprx = [approx_shepard]
     #return apprx
     for i in {9000}:
         for j in {1000}:
-            apprx.append(Approximator_NN_ND([i,j,[16,16]],activationFunction = nn.Sigmoid()))
+            apprx.append(Approximator_NN_ND([i,j,[16,16]]))
+            apprx.append(Approximator_NN_ND([i,j,[2,2]]))
+            apprx.append(Approximator_NN_ND([i,j,[4,4,4]]))
+            apprx.append(Approximator_NN_ND([i,j,[8,8]]))
+            #print("")
+    return apprx
+    for i in {100,300}:
+        for j in {900}:
+           apprx.append(Approximator_Fourier_ND(params=[j,i],ridge_lambda=1e-2))
+    return apprx
+
+
+    apprx.append(Approximator_Transformer(params=[800,10000,[4,4]],num_layers=2,name ="Transformer"))
     return apprx
 
 def getFunc():
@@ -108,6 +114,14 @@ def exp_sinus_4D_function():
     exp.plot_1d_slices()
     exp.plot_pca_querschnitt_all_outputs()    
 
+def exp_dgl_function():
+    print("Lorentz_Attraktor")
+    exp = Experiment_ND("Lorentz_Attraktor",getApprox(),Function_Lorentz_DGL(),loss_fn=torch.nn.SmoothL1Loss())
+    exp.train()
+    exp.plot_error_histograms()
+    exp.plot_1d_slices()
+    exp.plot_pca_querschnitt_all_outputs()    
+
 def exp_plotting_loss_vs_epochs():
     print("NN_epochs")
     exp = Experiment_ND("NN_epoch_vgl",[],Function_Periodic_Behaviour(),logscale=True,parallel=True)
@@ -129,9 +143,7 @@ def exp_plotting_loss_vs_frequencies():
 
 
 def plotEpochsAndStuffVsFunction(function):
-
     experiment = Experiment_ND("All_Functions_NNs",[],function,logscale=True)
-
     model_configs = [
         {
             "nodes_per_layer": [2, 2],
@@ -207,5 +219,16 @@ def plotEpochsAndStuffVsFunction(function):
         fixed_epochs=5000,parallel=True
     )
 
-for func in [Function_Sin_2D(), Function_Periodic_Behaviour(), Function_Sin_4D(), Function_Rotation3D(), Function_Mandelbrot(), Function_Basic1DArm(), Function_MultiDimOutput()]:
-    plotEpochsAndStuffVsFunction(func)
+def clusterShit():
+    for func in [Function_Sin_2D(), Function_Periodic_Behaviour(), Function_Sin_4D(), Function_Rotation3D(), Function_Mandelbrot(), Function_Basic1DArm(), Function_MultiDimOutput()]:
+        plotEpochsAndStuffVsFunction(func)
+
+
+dgl_visualizer = DGL_Visualizer("3D_Vector_Fields", getApprox(),Function_Lorentz_DGL(),loss_fn=torch.nn.SmoothL1Loss(), parallel= True)
+dgl_visualizer.train()
+
+dgl_visualizer.plot_trajectories_video(n_steps=1000,delta=0.001,fps=80,combine=True)
+dgl_visualizer.plot_trajectories_video(n_steps=1000,delta=0.001,fps=80,combine=False)
+
+dgl_visualizer.plot_trajectories_3D_all()
+exp_dgl_function()
