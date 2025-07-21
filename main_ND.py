@@ -42,11 +42,12 @@ def startCasualExp():
     exp.plot_1d_slices(mode="median")
 
 def getApprox():
-    approx_shepard = ShepardInterpolator([],10000,power=5)
+    approx_shepard = ShepardInterpolator([],10000,power=6)
+    approx_shepard2 = ShepardInterpolator([],10000,power=4)
     approx_identity = Approximator_Identity_ND([])
     #apprx = []
     #approx_transformer = Approximator_Transformer( params=[500, 500, [16, 16]], device = device)
-    apprx = []
+    apprx = [approx_shepard2]
     #return apprx
     for i in {20000}:
         for j in {3000}:
@@ -59,7 +60,7 @@ def getApprox():
             apprx.append(Approximator_NN_ND([i,j,[32,32]]))
             apprx.append(Approximator_NN_ND([i,j,[64,64]]))
             apprx.append(Approximator_NN_ND([i,j,[128,128]]))
-    return apprx
+    #return apprx
     apprx.append(approx_shepard)
     return apprx
     for i in {100,300}:
