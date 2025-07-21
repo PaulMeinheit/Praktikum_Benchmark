@@ -42,15 +42,16 @@ def startCasualExp():
     exp.plot_1d_slices(mode="median")
 
 def getApprox():
-    approx_shepard = ShepardInterpolator([],10000,power=6)
-    approx_shepard2 = ShepardInterpolator([],10000,power=4)
-    approx_identity = Approximator_Identity_ND([])
-    #apprx = []
+
+    
+    apprx = []
     #approx_transformer = Approximator_Transformer( params=[500, 500, [16, 16]], device = device)
-    apprx = [approx_shepard2]
+    for i in {10000}:
+        for j in {4,5}:
+            apprx.append(ShepardInterpolator([],i,power=j))
     #return apprx
-    for i in {20000}:
-        for j in {3000}:
+    for i in {40000}:
+        for j in {4000}:
             apprx.append(Approximator_NN_ND([i,j,[16,16]]))
             apprx.append(Approximator_NN_ND([i,j,[2,2]]))
             apprx.append(Approximator_NN_ND([i,j,[4,4,4]]))
@@ -60,11 +61,10 @@ def getApprox():
             apprx.append(Approximator_NN_ND([i,j,[32,32]]))
             apprx.append(Approximator_NN_ND([i,j,[64,64]]))
             apprx.append(Approximator_NN_ND([i,j,[128,128]]))
+    
     #return apprx
-    apprx.append(approx_shepard)
-    return apprx
-    for i in {100,300}:
-        for j in {900}:
+    for i in {300,3000}:
+        for j in {10000,30000}:
            apprx.append(Approximator_Fourier_ND(params=[j,i],ridge_lambda=1e-2))
     return apprx
 
@@ -234,9 +234,9 @@ def dgl_visualizer():
     dgl_visualizer = DGL_Visualizer("3D_Vector_Fields", getApprox(),Function_Lorentz_DGL(),loss_fn=torch.nn.SmoothL1Loss(), parallel= False)
     dgl_visualizer.train()
 
-    dgl_visualizer.plot_trajectories_video(n_steps=1000,delta=0.004,fps=30,combine=False)
+    dgl_visualizer.plot_trajectories_video(n_steps=5000,delta=0.001,fps=20,combine=False)
 
-    dgl_visualizer.plot_trajectories_video(n_steps=1000,delta=0.004,fps=30,combine=True)
+    dgl_visualizer.plot_trajectories_video(n_steps=10000,delta=0.001,fps=60,combine=True)
     dgl_visualizer.plot_trajectories_3D_all()
     exp_dgl_function()
 

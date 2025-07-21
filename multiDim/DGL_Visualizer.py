@@ -153,38 +153,7 @@ class DGL_Visualizer:
             results_raw = [plotTrajectories(arg) for arg in data]
         
         return
-        for i, approximator in enumerate(self.approximators):
-            fig = plt.figure(figsize=(8, 6))
-            ax = fig.add_subplot(111, projection='3d')
-            fig.patch.set_facecolor('black')
-            ax.set_facecolor('black')
-
-            colors = ['#FF6F00', '#00E676', '#2979FF', '#D500F9']
-            for idx, sp in enumerate(start_points):
-                traj = [sp.copy()]
-                p = sp.copy()
-                for _ in range(n_steps):
-                    direction = approximator.predict(p.reshape(1, -1))[0]
-                    p = p + delta * direction
-                    traj.append(p.copy())
-                traj = np.array(traj)
-                ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], color=colors[idx % len(colors)], linewidth=1.2, alpha=0.9)
-
-            ax.set_xlabel("x", color='white')
-            ax.set_ylabel("y", color='white')
-            ax.set_zlabel("z", color='white')
-            ax.tick_params(colors='white')
-            ax.grid(False)
-            ax.set_xticks([])
-            ax.set_yticks([])
-            ax.set_zticks([])
-            title = approximator.name
-            ax.set_title(title, color='white')
-
-            plt.tight_layout()
-            
-            self.save_plot(fig, f"trajectory_{title}", ext="svg", timestamp=True)
-
+        
     def plot_trajectories_video(self, n_steps=500, delta=0.01, fps=30, save_dir=None, combine=False):
         """
         Erstellt MP4-Videos der Trajektorien-Entwicklung.
@@ -201,13 +170,18 @@ class DGL_Visualizer:
         identity_apx.train(self.function)
 
         start_points = [
-            #np.array([10.0, 20.0, 51.05]),
-            #np.array([10.0, -20.5, 20.05]),
+            np.array([10.0, 20.0, 51.05]),
+            np.array([10.0, -20.5, 20.05]),
             np.array([5.0, -20.0, 50.05])
         ]
-        base_colors = ["#7F52FC", '#00E676', "#005EFF", '#D500F9', '#FF1744', '#00B8D4', '#FFD600']
-        model_colors = ['#7F52FC', '#00E676', '#2979FF', '#D500F9', '#FF1744', '#00B8D4', '#FFD600']
+        base_colors = ["#2D00A8", '#00E676', "#000000", '#D500F9', '#FF1744', '#00B8D4', '#FFD600']
+        model_colors = ['#2D00A8', '#00E676', '#000000', '#D500F9', '#FF1744', '#00B8D4', '#FFD600']
 
+        my_line_width = 1.0
+
+        my_alpha = 0.95
+        my_dpi = 150
+        my_figsize = (9.6, 5.4)
         if combine:
             # --- Gemeinsames Video für alle Modelle + Identity ---
             all_models = [identity_apx] + self.approximators
@@ -224,7 +198,7 @@ class DGL_Visualizer:
                         trajs[m][idx].append(p_new)
 
                 # --- Plot Frame ---
-                fig = plt.figure(figsize=(12,9), dpi=200)  
+                fig = plt.figure(figsize=my_figsize, dpi=my_dpi)
                 ax = fig.add_subplot(111, projection='3d')
                 fig.patch.set_facecolor('black')
                 ax.set_facecolor('black')
@@ -232,7 +206,7 @@ class DGL_Visualizer:
                     for idx in range(len(start_points)):
                         traj = np.array(trajs[m][idx])
                         ax.plot(traj[:, 0], traj[:, 1], traj[:, 2],
-                                color=model_colors[m % len(model_colors)], linewidth=2.0, alpha=0.9)
+                                color=model_colors[m % len(model_colors)], linewidth=my_line_width, alpha=my_alpha)
                 ax.set_xlabel("x", color='white')
                 ax.set_ylabel("y", color='white')
                 ax.set_zlabel("z", color='white')
@@ -267,7 +241,7 @@ class DGL_Visualizer:
             print(f"🎬 Video gespeichert: {video_path}")
 
             # --- Letzten Frame als SVG speichern ---
-            fig = plt.figure(figsize=(12, 9), dpi=200)
+            fig = plt.figure(figsize=my_figsize, dpi=my_dpi)
             ax = fig.add_subplot(111, projection='3d')
             fig.patch.set_facecolor('black')
             ax.set_facecolor('black')
@@ -275,7 +249,7 @@ class DGL_Visualizer:
                 for idx in range(len(start_points)):
                     traj = np.array(trajs[m][idx])
                     ax.plot(traj[:, 0], traj[:, 1], traj[:, 2],
-                            color=model_colors[m % len(model_colors)], linewidth=2.0, alpha=0.9)
+                            color=model_colors[m % len(model_colors)], linewidth=my_line_width, alpha=my_alpha)
             ax.set_xlabel("x", color='white')
             ax.set_ylabel("y", color='white')
             ax.set_zlabel("z", color='white')
@@ -315,15 +289,15 @@ class DGL_Visualizer:
                         trajs_apx[idx].append(p_apx_new)
 
                     # --- Plot Frame ---
-                    fig = plt.figure(figsize=(12, 9), dpi=200)
+                    fig = plt.figure(figsize=my_figsize, dpi=my_dpi)
                     ax = fig.add_subplot(111, projection='3d')
                     fig.patch.set_facecolor('black')
                     ax.set_facecolor('black')
                     for idx in range(len(start_points)):
                         traj_id = np.array(trajs_id[idx])
                         traj_apx = np.array(trajs_apx[idx])
-                        ax.plot(traj_id[:, 0], traj_id[:, 1], traj_id[:, 2], color='orange', linewidth=2.0, alpha=0.9, label="Identity" if idx==0 else "")
-                        ax.plot(traj_apx[:, 0], traj_apx[:, 1], traj_apx[:, 2], color=base_colors[idx % len(base_colors)], linewidth=2.0, alpha=0.9, label=approximator.name if idx==0 else "")
+                        ax.plot(traj_id[:, 0], traj_id[:, 1], traj_id[:, 2], color='orange', linewidth=my_line_width, alpha=my_alpha, label="Identity" if idx==0 else "")
+                        ax.plot(traj_apx[:, 0], traj_apx[:, 1], traj_apx[:, 2], color=base_colors[idx % len(base_colors)], linewidth=my_line_width, alpha=my_alpha, label=approximator.name if idx==0 else "")
                     ax.set_xlabel("x", color='white')
                     ax.set_ylabel("y", color='white')
                     ax.set_zlabel("z", color='white')
@@ -349,15 +323,15 @@ class DGL_Visualizer:
                 print(f"🎬 Video gespeichert: {video_path}")
 
                 # --- Letzten Frame als SVG speichern ---
-                fig = plt.figure(figsize=(12, 9), dpi=200)
+                fig = plt.figure(figsize=my_figsize, dpi=my_dpi)
                 ax = fig.add_subplot(111, projection='3d')
                 fig.patch.set_facecolor('black')
                 ax.set_facecolor('black')
                 for idx in range(len(start_points)):
                     traj_id = np.array(trajs_id[idx])
                     traj_apx = np.array(trajs_apx[idx])
-                    ax.plot(traj_id[:, 0], traj_id[:, 1], traj_id[:, 2], color='orange', linewidth=2.0, alpha=0.9, label="Identity" if idx==0 else "")
-                    ax.plot(traj_apx[:, 0], traj_apx[:, 1], traj_apx[:, 2], color='blue', linewidth=2.0, alpha=0.9, label=approximator.name if idx==0 else "")
+                    ax.plot(traj_id[:, 0], traj_id[:, 1], traj_id[:, 2], color='orange', linewidth=my_line_width, alpha=my_alpha, label="Identity" if idx==0 else "")
+                    ax.plot(traj_apx[:, 0], traj_apx[:, 1], traj_apx[:, 2], color='blue', linewidth=my_line_width, alpha=my_alpha, label=approximator.name if idx==0 else "")
                 ax.set_xlabel("x", color='white')
                 ax.set_ylabel("y", color='white')
                 ax.set_zlabel("z", color='white')
