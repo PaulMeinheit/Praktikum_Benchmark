@@ -201,12 +201,12 @@ class DGL_Visualizer:
         identity_apx.train(self.function)
 
         start_points = [
-            np.array([10.0, 20.0, 51.05]),
-            np.array([10.0, -20.5, 20.05]),
+            #np.array([10.0, 20.0, 51.05]),
+            #np.array([10.0, -20.5, 20.05]),
             np.array([5.0, -20.0, 50.05])
         ]
-        base_colors = ['#FF6F00', '#00E676', '#2979FF', '#D500F9', '#FF1744', '#00B8D4', '#FFD600']
-        model_colors = ['#FF6F00', '#00E676', '#2979FF', '#D500F9', '#FF1744', '#00B8D4', '#FFD600']
+        base_colors = ["#7F52FC", '#00E676', "#005EFF", '#D500F9', '#FF1744', '#00B8D4', '#FFD600']
+        model_colors = ['#7F52FC', '#00E676', '#2979FF', '#D500F9', '#FF1744', '#00B8D4', '#FFD600']
 
         if combine:
             # --- Gemeinsames Video für alle Modelle + Identity ---
@@ -260,7 +260,9 @@ class DGL_Visualizer:
                 plt.close(fig)
 
             # --- Video speichern ---
-            video_path = os.path.join(save_dir, f"trajectory_all_models.mp4")
+            save_name = f"trajectory_all_models"
+            save_name+= "_" + time.strftime("%d-%m-%Y_%H-%M-%S")
+            video_path = os.path.join(save_dir, save_name + ".mp4")
             imageio.mimsave(video_path, frames, fps=fps, macro_block_size=None)
             print(f"🎬 Video gespeichert: {video_path}")
 
@@ -320,8 +322,8 @@ class DGL_Visualizer:
                     for idx in range(len(start_points)):
                         traj_id = np.array(trajs_id[idx])
                         traj_apx = np.array(trajs_apx[idx])
-                        ax.plot(traj_id[:, 0], traj_id[:, 1], traj_id[:, 2], color='gray', linewidth=1.0, alpha=0.5, label="Identity" if step==0 and idx==0 else "")
-                        ax.plot(traj_apx[:, 0], traj_apx[:, 1], traj_apx[:, 2], color=base_colors[idx % len(base_colors)], linewidth=2.0, alpha=0.9, label=approximator.name if step==0 and idx==0 else "")
+                        ax.plot(traj_id[:, 0], traj_id[:, 1], traj_id[:, 2], color='orange', linewidth=2.0, alpha=0.9, label="Identity" if idx==0 else "")
+                        ax.plot(traj_apx[:, 0], traj_apx[:, 1], traj_apx[:, 2], color=base_colors[idx % len(base_colors)], linewidth=2.0, alpha=0.9, label=approximator.name if idx==0 else "")
                     ax.set_xlabel("x", color='white')
                     ax.set_ylabel("y", color='white')
                     ax.set_zlabel("z", color='white')
@@ -331,8 +333,7 @@ class DGL_Visualizer:
                     ax.set_yticks([])
                     ax.set_zticks([])
                     ax.set_title(f"{approximator.name} vs. Identity", color='white')
-                    if step == 0:
-                        ax.legend(loc='lower center', bbox_to_anchor=(0.5, -0.18), ncol=2, frameon=False, fontsize='medium', labelcolor='white')
+                    ax.legend(loc='lower center', bbox_to_anchor=(0.5, -0.18), ncol=2, frameon=False, fontsize='medium', labelcolor='white')
                     plt.tight_layout()
                     fig.canvas.draw()
                     frame = np.array(fig.canvas.renderer.buffer_rgba())
@@ -341,7 +342,9 @@ class DGL_Visualizer:
                     plt.close(fig)
 
                 # --- Video speichern ---
-                video_path = os.path.join(save_dir, f"trajectory_{approximator.name}.mp4")
+                save_name = f"trajectory_{approximator.name}"
+                save_name += "_" + time.strftime("%d-%m-%Y_%H-%M-%S")
+                video_path = os.path.join(save_dir, f"{save_name}.mp4")
                 imageio.mimsave(video_path, frames, fps=fps, macro_block_size=None)
                 print(f"🎬 Video gespeichert: {video_path}")
 
@@ -353,8 +356,8 @@ class DGL_Visualizer:
                 for idx in range(len(start_points)):
                     traj_id = np.array(trajs_id[idx])
                     traj_apx = np.array(trajs_apx[idx])
-                    ax.plot(traj_id[:, 0], traj_id[:, 1], traj_id[:, 2], color='gray', linewidth=1.0, alpha=0.5, label="Identity" if idx==0 else "")
-                    ax.plot(traj_apx[:, 0], traj_apx[:, 1], traj_apx[:, 2], color=base_colors[idx % len(base_colors)], linewidth=2.0, alpha=0.9, label=approximator.name if idx==0 else "")
+                    ax.plot(traj_id[:, 0], traj_id[:, 1], traj_id[:, 2], color='orange', linewidth=2.0, alpha=0.9, label="Identity" if idx==0 else "")
+                    ax.plot(traj_apx[:, 0], traj_apx[:, 1], traj_apx[:, 2], color='blue', linewidth=2.0, alpha=0.9, label=approximator.name if idx==0 else "")
                 ax.set_xlabel("x", color='white')
                 ax.set_ylabel("y", color='white')
                 ax.set_zlabel("z", color='white')
