@@ -27,9 +27,9 @@ def plotTrajectories(args):
             direction = approximator.predict(p.reshape(1, -1))[0]
             p = p + delta * direction
             traj.append(p.copy())
-            if i%2000==1:
+            #if i%2000==1:
                 #print(direction)
-                print(f"{approximator.name}-simulation at starting_point: {idx} & step: {i}")
+            #    print(f"{approximator.name}-simulation at starting_point: {idx} & step: {i}")
         traj = np.array(traj)
         ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], color=colors[idx % len(colors)], linewidth=1.2, alpha=0.9)
 
@@ -170,9 +170,9 @@ class DGL_Visualizer:
         identity_apx.train(self.function)
 
         start_points = [
-            np.array([10.0, 20.0, 51.05]),
+            #np.array([10.0, 20.0, 51.05]),
             np.array([10.0, -20.5, 20.05]),
-            np.array([5.0, -20.0, 50.05])
+            #np.array([5.0, -20.0, 50.05])
         ]
         base_colors = ["#2D00A8", '#00E676', "#000000", '#D500F9', '#FF1744', '#00B8D4', '#FFD600']
         model_colors = ['#2D00A8', '#00E676', '#000000', '#D500F9', '#FF1744', '#00B8D4', '#FFD600']

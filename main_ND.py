@@ -50,17 +50,21 @@ def getApprox():
         for j in {4,5}:
             apprx.append(ShepardInterpolator([],i,power=j))
     #return apprx
-    for i in {40000}:
-        for j in {4000}:
-            apprx.append(Approximator_NN_ND([i,j,[16,16]]))
+    for i in {15000,40000}:
+        for j in {3000}:
             apprx.append(Approximator_NN_ND([i,j,[2,2]]))
-            apprx.append(Approximator_NN_ND([i,j,[4,4,4]]))
+            apprx.append(Approximator_NN_ND([i,j,[4,4]]))
             apprx.append(Approximator_NN_ND([i,j,[8,8]]))
-            apprx.append(Approximator_NN_ND([i,j,[8,8,8]]))
+            apprx.append(Approximator_NN_ND([i,j,[8,8]]))
             apprx.append(Approximator_NN_ND([i,j,[16,16]]))
             apprx.append(Approximator_NN_ND([i,j,[32,32]]))
             apprx.append(Approximator_NN_ND([i,j,[64,64]]))
             apprx.append(Approximator_NN_ND([i,j,[128,128]]))
+    #Beste Approximatoren von Test mit Epochen,sample points
+    apprx.append(Approximator_NN_ND([18000,1500,[16,16,16,16]]))
+    apprx.append(Approximator_NN_ND([10000,4000,[32,32]]))
+    apprx.append(Approximator_NN_ND([20000,6000,[32,32]]))
+    apprx.append(Approximator_NN_ND([20000,6000,[64,64]]))
     
     #return apprx
     for i in {300,3000}:
@@ -131,9 +135,9 @@ def exp_dgl_function():
 
 def exp_plotting_loss_vs_epochs():
     print("NN_epochs")
-    exp = Experiment_ND("NN_epoch_vgl",[],Function_Periodic_Behaviour(),logscale=True,parallel=True)
+    exp = Experiment_ND("NN_epoch_vgl",[],Function_Lorentz_DGL(),logscale=True,parallel=False)
 
-    exp.plot_norms_vs_epochs([1,10,100,200,400,800,1000,1200,1400,1600,1800,2000,2500,3000,3500,4000,10000],10000,[16,16,16])
+    exp.plot_norms_vs_epochs([1,10,100,200,400,800,1000,1200,1400,1600,1800,2000,2500,3000,3500,4000,10000,15000,20000],1500,[16,16,16])
 
 def exp_plotting_loss_vs_frequencies():
     print("Fourier_Frequ")
@@ -150,7 +154,7 @@ def exp_plotting_loss_vs_frequencies():
 
 
 def plotEpochsAndStuffVsFunction(function):
-    experiment = Experiment_ND("All_Functions_NNs",[],function,logscale=True)
+    experiment = Experiment_ND("Lorentz_NN_Tests",[],function,logscale=True)
     model_configs = [
         {
             "nodes_per_layer": [2, 2],
@@ -207,6 +211,13 @@ def plotEpochsAndStuffVsFunction(function):
             "lr": 0.01
         },
         {
+            "nodes_per_layer": [16,16,16],
+            "activation_function": torch.nn.ReLU(),
+            "loss_fn": torch.nn.L1Loss(),
+            "lr": 0.01
+        },
+        
+        {
             "nodes_per_layer": [16,16,16,16],
             "activation_function": torch.nn.ReLU(),
             "loss_fn": torch.nn.L1Loss(),
@@ -217,13 +228,13 @@ def plotEpochsAndStuffVsFunction(function):
 
     experiment.plot_error_vs_epochs(
     model_configs=model_configs,
-    epoch_counts=[50, 100, 200,300,400,500,1000,1200,1400,1600,3000,6000,7000,8000,9000,10000,12000,14000,16000,18000,20000],
-    fixed_samples=5000,parallel=True)
+    epoch_counts=[400,500,1000,1200,1400,1600,3000,6000,7000,8000,9000,10000,12000,14000,16000,18000,20000],
+    fixed_samples=1500,parallel=False)
 
     experiment.plot_error_vs_samples(
         model_configs=model_configs,
-        sample_counts=[50, 100, 200,300,400,500,600,700,800,900,1000,1500,2000,2500,3000,3500,4000,4500,5000,5500,6000,6500,7000,7500,8000],
-        fixed_epochs=5000,parallel=True
+        sample_counts=[1000,1500,2000,2500,3000,3500,4000],
+        fixed_epochs=10000,parallel=False
     )
 
 def clusterShit():
@@ -231,13 +242,15 @@ def clusterShit():
         plotEpochsAndStuffVsFunction(func)
 
 def dgl_visualizer():
-    dgl_visualizer = DGL_Visualizer("3D_Vector_Fields", getApprox(),Function_Lorentz_DGL(),loss_fn=torch.nn.SmoothL1Loss(), parallel= False)
+    dgl_visualizer = DGL_Visualizer("3D_Vector_Fields", getApprox(),Function_Lorentz_DGL(),loss_fn=torch.nn.SmoothL1Loss(), parallel= True)
     dgl_visualizer.train()
 
-    dgl_visualizer.plot_trajectories_video(n_steps=5000,delta=0.001,fps=20,combine=False)
+    dgl_visualizer.plot_trajectories_video(n_steps=1000,delta=0.004,fps=20,combine=False)
 
-    dgl_visualizer.plot_trajectories_video(n_steps=10000,delta=0.001,fps=60,combine=True)
+    dgl_visualizer.plot_trajectories_video(n_steps=1000,delta=0.004,fps=20,combine=True)
     dgl_visualizer.plot_trajectories_3D_all()
     exp_dgl_function()
 
+#plotEpochsAndStuffVsFunction(Function_Lorentz_DGL())
+#exp_plotting_loss_vs_epochs()
 dgl_visualizer()
