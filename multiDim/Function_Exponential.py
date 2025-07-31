@@ -1,7 +1,7 @@
 from FunctionND import FunctionND
 import numpy as np
-class Function_Lin(FunctionND):
-    def __init__(self, name="Function_Linear", inputDim=2,outputDim=1,inDomainStart=[-30,-30],inDomainEnd=[30,30]):
+class Function_Exponential(FunctionND):
+    def __init__(self, name="Function_Exponential", inputDim=2,outputDim=1,inDomainStart=[-10,-10],inDomainEnd=[10,10]):
         self.name = name
         self.inDomainStart = inDomainStart
         self.inDomainEnd = inDomainEnd
@@ -11,8 +11,10 @@ class Function_Lin(FunctionND):
     def evaluate(self, input):
         x = input[..., 0]
         y = input[..., 1]
-        
-        a= 8.0
-        b= 16.0
-        d= 64.0
-        return a*x + b*y + d
+        a= 1.0
+        b= 1.0
+        c= 0.5
+        d= 12.0
+
+        return 2**x + 3**y 
+

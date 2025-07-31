@@ -7,6 +7,12 @@ from multiDim.ShepardInterpolator import ShepardInterpolator
 from multiDim.Approximator_Identity_ND import Approximator_Identity_ND
 from multiDim.Function_Rotation3D import Function_Rotation3D 
 from multiDim.Function_Periodic_Behaviour import Function_Periodic_Behaviour
+from multiDim.Function_Exponential import Function_Exponential
+from multiDim.Function_Lin import Function_Lin
+from multiDim.Function_Polynom import Function_Polynom
+
+
+
 import torch
 from multiDim.Approximator_Fourier_ND import Approximator_Fourier_ND
 from multiDim.ApproximatorTransformer import Approximator_Transformer
@@ -228,14 +234,15 @@ def plotEpochsAndStuffVsFunction(function):
 
     experiment.plot_error_vs_epochs(
     model_configs=model_configs,
-    epoch_counts=[400,500,1000,1200,1400,1600,3000,6000,7000,8000,9000,10000,12000,14000,16000,18000,20000],
+    epoch_counts=[400,500,1000],
     fixed_samples=1500,parallel=False)
-
+#1200,1400,1600,3000,6000,7000,8000,9000,10000,12000,14000,16000,18000,20000
     experiment.plot_error_vs_samples(
         model_configs=model_configs,
-        sample_counts=[1000,1500,2000,2500,3000,3500,4000],
+        sample_counts=[1000,1500,2000],
         fixed_epochs=10000,parallel=False
     )
+    #2500,3000,3500,4000
 
 def clusterShit():
     for func in [Function_Sin_2D(), Function_Periodic_Behaviour(), Function_Sin_4D(), Function_Rotation3D(), Function_Mandelbrot(), Function_Basic1DArm(), Function_MultiDimOutput()]:
@@ -251,6 +258,15 @@ def dgl_visualizer():
     dgl_visualizer.plot_trajectories_3D_all()
     exp_dgl_function()
 
+
+
+def all_functions_plotting():
+    plotEpochsAndStuffVsFunction(Function_Lin())
+    plotEpochsAndStuffVsFunction(Function_Exponential())
+    plotEpochsAndStuffVsFunction(Function_Polynom())
+
+
 #plotEpochsAndStuffVsFunction(Function_Lorentz_DGL())
 #exp_plotting_loss_vs_epochs()
 dgl_visualizer()
+all_functions_plotting()
