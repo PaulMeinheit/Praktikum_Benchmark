@@ -160,7 +160,7 @@ def exp_plotting_loss_vs_frequencies():
 
 
 def plotEpochsAndStuffVsFunction(function):
-    experiment = Experiment_ND("Lorentz_NN_Tests",[],function,logscale=True)
+    experiment = Experiment_ND("Compare_Complexity",[],function,logscale=True,parallel=True)
     model_configs = [
         {
             "nodes_per_layer": [2, 2],
@@ -187,13 +187,13 @@ def plotEpochsAndStuffVsFunction(function):
             "lr": 0.01
         },
         {
-            "nodes_per_layer": [32,32],
+            "nodes_per_layer": [32,32,32,32],
             "activation_function": torch.nn.ReLU(),
             "loss_fn": torch.nn.L1Loss(),
             "lr": 0.01
         },
         {
-            "nodes_per_layer": [64,64],
+            "nodes_per_layer": [64,64,64,64],
             "activation_function": torch.nn.Tanh(),
             "loss_fn": torch.nn.L1Loss(),
             "lr": 0.01
@@ -228,19 +228,56 @@ def plotEpochsAndStuffVsFunction(function):
             "activation_function": torch.nn.ReLU(),
             "loss_fn": torch.nn.L1Loss(),
             "lr": 0.01
+        },
+        {
+            "nodes_per_layer": [32,32],
+            "activation_function": torch.nn.ReLU(),
+            "loss_fn": torch.nn.L1Loss(),
+            "lr": 0.01
+        },
+        {
+            "nodes_per_layer": [32,32,32],
+            "activation_function": torch.nn.ReLU(),
+            "loss_fn": torch.nn.L1Loss(),
+            "lr": 0.01
+        },
+        {
+            "nodes_per_layer": [128,128],
+            "activation_function": torch.nn.ReLU(),
+            "loss_fn": torch.nn.L1Loss(),
+            "lr": 0.01
+        },
+        
+        {
+            "nodes_per_layer": [64,64],
+            "activation_function": torch.nn.ReLU(),
+            "loss_fn": torch.nn.L1Loss(),
+            "lr": 0.01
+        },
+        {
+            "nodes_per_layer": [64,64,64],
+            "activation_function": torch.nn.ReLU(),
+            "loss_fn": torch.nn.L1Loss(),
+            "lr": 0.01
+        },
+        {
+            "nodes_per_layer": [128,128,128],
+            "activation_function": torch.nn.ReLU(),
+            "loss_fn": torch.nn.L1Loss(),
+            "lr": 0.01
         }
     ]
 
 
     experiment.plot_error_vs_epochs(
     model_configs=model_configs,
-    epoch_counts=[400,500,1000],
-    fixed_samples=1500,parallel=False)
+    epoch_counts=[400,500,1000,1500,2000,2500,3000,3500,4000,5000,6000,7000,8000,9000,10000,12000,14000,16000,18000,20000,25000,30000,35000,40000],
+    fixed_samples=3000,parallel=True)
 #1200,1400,1600,3000,6000,7000,8000,9000,10000,12000,14000,16000,18000,20000
     experiment.plot_error_vs_samples(
         model_configs=model_configs,
-        sample_counts=[1000,1500,2000],
-        fixed_epochs=10000,parallel=False
+        sample_counts=[1000,1500,2000,3000,4000,5000,6000,7000,8000,9000,10000,12000,14000,16000,18000,20000],  
+        fixed_epochs=30000,parallel=True
     )
     #2500,3000,3500,4000
 
@@ -264,9 +301,10 @@ def all_functions_plotting():
     plotEpochsAndStuffVsFunction(Function_Lin())
     plotEpochsAndStuffVsFunction(Function_Exponential())
     plotEpochsAndStuffVsFunction(Function_Polynom())
+    plotEpochsAndStuffVsFunction(Function_Lorentz_DGL())
 
 
 #plotEpochsAndStuffVsFunction(Function_Lorentz_DGL())
 #exp_plotting_loss_vs_epochs()
-dgl_visualizer()
+#dgl_visualizer()
 all_functions_plotting()

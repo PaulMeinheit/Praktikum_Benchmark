@@ -1,4 +1,4 @@
-from FunctionND import FunctionND
+from multiDim.FunctionND import FunctionND
 import numpy as np
 class Function_Lin(FunctionND):
     def __init__(self, name="Function_Linear", inputDim=2,outputDim=1,inDomainStart=[-30,-30],inDomainEnd=[30,30]):

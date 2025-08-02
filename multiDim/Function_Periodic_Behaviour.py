@@ -1,5 +1,5 @@
 import numpy as np
-from .FunctionND import FunctionND
+from multiDim.FunctionND import FunctionND
 
 #guter Approximator: approx_fourier = Approximator_Fourier_ND(params=[100000,200],ridge_lambda=1e-1)
 class Function_Periodic_Behaviour(FunctionND):
