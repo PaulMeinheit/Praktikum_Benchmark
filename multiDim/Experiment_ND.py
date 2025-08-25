@@ -166,7 +166,7 @@ def train_and_predict(args):
     return (apx.name, Y_pred, loss, apx)
 
 def worker_plot_error_vs_samples(args):
-    function, config, s ,fixed_epochs = args
+    function, config, s ,fixed_epochs, epsilon = args
     model = Approximator_NN_ND(
         params=[fixed_epochs, s, config["nodes_per_layer"], config.get("lr", 0.01)],
         activationFunction=config.get("activation_function", torch.nn.ReLU()),
@@ -175,12 +175,11 @@ def worker_plot_error_vs_samples(args):
     model.train(function)
     X_test, Y_test = _sample_data(function, 1000)
     preds = model.predict(X_test)
-    mse = np.mean((preds - Y_test) ** 2)
-    model.update_name_without_epochs_and_samplepoints()
+    mse = np.mean(np.abs(preds - Y_test) / (np.abs(Y_test) + epsilon))
     return (model.name, s, mse)
 
 def worker_plot_error_vs_epochs(args):
-    function, config, epochs, fixed_samples = args
+    function, config, epochs, fixed_samples, epsilon= args
     model = Approximator_NN_ND(
         params=[epochs, fixed_samples, config["nodes_per_layer"], config.get("lr", 0.01)],
         activationFunction=config.get("activation_function", torch.nn.ReLU()),
@@ -189,14 +188,14 @@ def worker_plot_error_vs_epochs(args):
     model.train(function)
     X_test, Y_test = _sample_data(function, 1000)
     preds = model.predict(X_test)
-    mse = np.mean((preds - Y_test) ** 2)
+    mse = np.mean(np.abs(preds - Y_test) / (np.abs(Y_test) + epsilon))
     model.update_name_without_epochs_and_samplepoints()
     return (model.name, epochs, mse)
 
 
 class Experiment_ND:
     def __init__(self, name, approximators, function, loss_fn=torch.nn.MSELoss(),
-                 parallel=False,vmin=1e-17,vmax=1e50,logscale=False):
+                 parallel=False,vmin=1e-17,vmax=1e50,logscale=False, epsilon=1e-8):
         self.name = name
         self.approximators = approximators
         self.function = function
@@ -208,6 +207,8 @@ class Experiment_ND:
         self.results = []
         self.X = None
         self.Y_true = None
+        self.epsilon = epsilon  # <<<<<<<< NEU
+
     def save_plot(self,fig, filename, save_dir=None, ext="svg", timestamp=True):
         if save_dir==None:
             save_dir=f"{self.name}"
@@ -275,14 +276,10 @@ class Experiment_ND:
 
 
     def plot_error_histograms(self, bins="auto", loss_fn=None, save_dir=None, max_cols=3):
-
         Y_true = np.atleast_2d(self.Y_true)
-
-        # Berechne Fehler-Mittelwerte für jedes Resultat
         results_with_error = []
         for res in self.results:
             Y_pred = np.atleast_2d(res['Y_pred'])
-
             if loss_fn is not None:
                 loss_name="Custom-Loss"
                 error = np.array([
@@ -293,12 +290,12 @@ class Experiment_ND:
                     for y_true, y_pred in zip(Y_true, Y_pred)
                 ])
             else:
-                loss_name="L1-Loss"
-                error = np.linalg.norm(Y_true - Y_pred, axis=1)
-            error = self._apply_logscale(error)
-            mu = np.mean(error)
-
-            results_with_error.append((mu, res, error))
+                loss_name="Relativer L1-Fehler"
+                error = np.abs(Y_true - Y_pred) / (np.abs(Y_true) + self.epsilon)
+                error = error.flatten()  # Falls mehrdimensional
+        error = self._apply_logscale(error)
+        mu = np.mean(error)
+        results_with_error.append((mu, res, error))
 
         # Sortiere nach Fehler-Mittelwert aufsteigend (besser = kleinerer Fehler)
         results_with_error.sort(key=lambda x: x[0])
@@ -348,10 +345,10 @@ class Experiment_ND:
                 losses = np.mean((Y_true - Y_pred) ** 2, axis=1)
                 value = np.mean(losses)
             elif mode == "l1":
-                losses = np.abs(Y_true - Y_pred)
+                losses = np.abs(Y_true - Y_pred) / (np.abs(Y_true) + self.epsilon)
                 value = np.mean(losses)
             elif mode == "max":
-                losses = np.linalg.norm(Y_true - Y_pred, axis=1)
+                losses = np.linalg.norm(Y_true - Y_pred, axis=1) / (np.abs(np.linalg.norm(Y_true, axis=1)) + self.epsilon)
                 value = np.max(losses)
             else:
                 raise ValueError(f"Unbekannter Modus: {mode}")
@@ -776,7 +773,7 @@ class Experiment_ND:
         function = self.function
         X_test_global, Y_test_global = _sample_data(function, test_points)
 
-        all_args = [(function, config, s, fixed_epochs) for config in model_configs for s in sample_counts]
+        all_args = [(function, config, s, fixed_epochs, self.epsilon) for config in model_configs for s in sample_counts]
 
         if parallel:
             with ProcessPoolExecutor(max_workers=6) as executor:
@@ -791,6 +788,7 @@ class Experiment_ND:
             results[name].append((s, mse))
 
         for name in results:
+            # Sortiere nach Sample Count, damit die Reihenfolge stimmt!
             results[name].sort(key=lambda x: x[0])
             results[name] = [mse for _, mse in results[name]]
 
@@ -825,7 +823,7 @@ class Experiment_ND:
         function = self.function
         X_test_global, Y_test_global = _sample_data(function, test_points)
 
-        all_args = [(function, config, e, fixed_samples) for config in model_configs for e in epoch_counts]
+        all_args = [(function, config, e, fixed_samples, self.epsilon) for config in model_configs for e in epoch_counts]
 
         if parallel:
             with ProcessPoolExecutor(max_workers=6) as executor:
