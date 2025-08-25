@@ -281,7 +281,7 @@ def plotEpochsAndStuffVsFunction(function):
     experiment.plot_error_vs_samples(
         model_configs=model_configs,
         sample_counts=[1000,1500,2000,3000,4000,5000,6000,7000,8000,9000,10000,12000,14000,16000,18000,20000],  
-        fixed_epochs=30000,parallel=True
+        fixed_epochs=10000,parallel=True
     )
     print(f"Samples-Time: {time.time() - start:.2f}s")
 
