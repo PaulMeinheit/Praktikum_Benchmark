@@ -259,9 +259,12 @@ def all_functions_plotting():
     plotEpochsAndStuffVsFunction(Function_Polynom())
     plotEpochsAndStuffVsFunction(Function_Exponential())
     plotEpochsAndStuffVsFunction(Function_Lorentz_DGL())
+all_functions_plotting()
 
 
 #plotEpochsAndStuffVsFunction(Function_Lorentz_DGL())
 #exp_plotting_loss_vs_epochs()
 #dgl_visualizer()
-all_functions_plotting()
+
+
+

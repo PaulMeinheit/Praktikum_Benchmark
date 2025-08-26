@@ -40,7 +40,7 @@ def time_vs_epochs_n_samplePoints(function,name="epochen_samplepoints_map",sampl
     Experiment_ND("test",[],function).plot_training_time_heatmap_random_sampling(name,function,activation_function,loss_fn_class,epochs_range, sample_points_range,nodes_per_layer,n_random_samples)
 
 def startCasualExp():
-    exp = Experiment_ND("Test",getApprox(),getFunc(),parallel=False,logscale=False,loss_fn=torch.nn.SmoothL1Loss())
+    exp = Experiment_ND("Test",getApprox(),getFunc(),parallel=False,logscale=True,loss_fn=torch.nn.SmoothL1Loss())
     exp.train()
     exp.print_loss_summary(mode="mse")
     exp.print_loss_summary(mode="l1")
@@ -50,31 +50,29 @@ def startCasualExp():
     exp.plot_1d_slices(mode="median")
 
 def getApprox():
-
-    
     apprx = []
     #approx_transformer = Approximator_Transformer( params=[500, 500, [16, 16]], device = device)
-    for i in {10000}:
+    for i in {5000}:
         for j in {4,5}:
             apprx.append(ShepardInterpolator([],i,power=j))
     #return apprx
-    for i in {15000,40000}:
+    for i in {10000,20000}:
         for j in {3000}:
             apprx.append(Approximator_NN_ND([i,j,[2,2]]))
-            apprx.append(Approximator_NN_ND([i,j,[4,4]]))
-            apprx.append(Approximator_NN_ND([i,j,[8,8]]))
-            apprx.append(Approximator_NN_ND([i,j,[8,8]]))
-            apprx.append(Approximator_NN_ND([i,j,[16,16]]))
+            #apprx.append(Approximator_NN_ND([i,j,[4,4]]))
+            #apprx.append(Approximator_NN_ND([i,j,[8,8]]))
+            #apprx.append(Approximator_NN_ND([i,j,[8,8]]))
+            #apprx.append(Approximator_NN_ND([i,j,[16,16]]))
             apprx.append(Approximator_NN_ND([i,j,[32,32]]))
-            apprx.append(Approximator_NN_ND([i,j,[64,64]]))
-            apprx.append(Approximator_NN_ND([i,j,[128,128]]))
+            #apprx.append(Approximator_NN_ND([i,j,[64,64]]))
+            #apprx.append(Approximator_NN_ND([i,j,[128,128]]))
     #Beste Approximatoren von Test mit Epochen,sample points
     apprx.append(Approximator_NN_ND([18000,1500,[16,16,16,16]]))
-    apprx.append(Approximator_NN_ND([10000,4000,[32,32]]))
-    apprx.append(Approximator_NN_ND([20000,6000,[32,32]]))
-    apprx.append(Approximator_NN_ND([20000,6000,[64,64]]))
+    #apprx.append(Approximator_NN_ND([10000,4000,[32,32]]))
+    #apprx.append(Approximator_NN_ND([20000,6000,[32,32]]))
+    #apprx.append(Approximator_NN_ND([20000,6000,[64,64]]))
     
-    #return apprx
+    return apprx
     for i in {300,3000}:
         for j in {10000,30000}:
            apprx.append(Approximator_Fourier_ND(params=[j,i],ridge_lambda=1e-2))
@@ -92,7 +90,11 @@ def getFunc():
     function_BasicArm= Function_Basic1DArm()
     function_sin_4D = Function_Sin_4D()
     function_mandel = Function_Mandelbrot()
-    return function_sin_4D
+    function_linear = Function_Lin()
+    function_Polynom = Function_Polynom()
+    function_exponential = Function_Exponential()
+
+    return function_linear
 
 #exp = Experiment_ND("Fourier_Frequenzen_vs_Loss",[],getFunc(),logscale=True)
 #exp.plot_norms_vs_fourier_freq(how_many_points_on_plot= 15,parallel=False,max_freqs=300,ridge_rate=1e-1,samplePoints=20000)
@@ -127,7 +129,7 @@ def exp_sinus_2D_function():
     
 def exp_sinus_4D_function():
     print("Sinus_4D")
-    exp = Experiment_ND("Sinus_4D",getApprox(),Function_Sin_2D(),loss_fn=torch.nn.SmoothL1Loss())
+    exp = Experiment_ND("Sinus_4D",getApprox(),Function_Sin_4D(),loss_fn=torch.nn.SmoothL1Loss())
     exp.train()
     exp.plot_error_histograms()
     exp.plot_1d_slices()
@@ -162,7 +164,7 @@ def exp_plotting_loss_vs_frequencies():
 
 
 def plotEpochsAndStuffVsFunction(function):
-    experiment = Experiment_ND("Compare_Complexity",[],function,logscale=True,parallel=True)
+    experiment = Experiment_ND("Compare_Complexity",[],function,logscale=True,parallel=False)
     model_configs = [
         {
             "nodes_per_layer": [2, 2],
@@ -171,118 +173,119 @@ def plotEpochsAndStuffVsFunction(function):
             "lr": 0.01
         },
         {
-            "nodes_per_layer": [4,4],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.01
-        },
-        {
-            "nodes_per_layer": [8,8],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.01
-        },
-        {
-            "nodes_per_layer": [16,16],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.01
-        },
-        {
-            "nodes_per_layer": [32,32,32,32],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.01
-        },
-        {
-            "nodes_per_layer": [64,64,64,64],
-            "activation_function": torch.nn.Tanh(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.01
-        },
-        {
-            "nodes_per_layer": [4,4,4],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.01
-        },
-        {
-            "nodes_per_layer": [8,8,8],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.01
-        },
-        {
-            "nodes_per_layer": [6,6,6,6],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.01
-        },
-        {
-            "nodes_per_layer": [16,16,16],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.01
-        },
-        
-        {
-            "nodes_per_layer": [16,16,16,16],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.01
-        },
-        {
-            "nodes_per_layer": [32,32],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.01
-        },
-        {
-            "nodes_per_layer": [32,32,32],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.01
-        },
-        {
-            "nodes_per_layer": [128,128],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.01
-        },
-        
-        {
-            "nodes_per_layer": [64,64],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.01
-        },
-        {
-            "nodes_per_layer": [64,64,64],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.01
-        },
-        {
-            "nodes_per_layer": [128,128,128],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.01
-        }
+    "nodes_per_layer": [4,4],
+    "activation_function": torch.nn.ReLU(),
+    "loss_fn": torch.nn.L1Loss(),
+    "lr": 0.01
+},
+{
+    "nodes_per_layer": [8,8],
+    "activation_function": torch.nn.ReLU(),
+    "loss_fn": torch.nn.L1Loss(),
+    "lr": 0.01
+},
+{
+    "nodes_per_layer": [16,16],
+    "activation_function": torch.nn.ReLU(),
+    "loss_fn": torch.nn.L1Loss(),
+    "lr": 0.01
+},
+{
+    "nodes_per_layer": [32,32,32,32],
+    "activation_function": torch.nn.ReLU(),
+    "loss_fn": torch.nn.L1Loss(),
+    "lr": 0.01
+},
+{
+    "nodes_per_layer": [64,64,64,64],
+    "activation_function": torch.nn.Tanh(),
+    "loss_fn": torch.nn.L1Loss(),
+    "lr": 0.01
+},
+{
+    "nodes_per_layer": [4,4,4],
+    "activation_function": torch.nn.ReLU(),
+    "loss_fn": torch.nn.L1Loss(),
+    "lr": 0.01
+},
+{
+    "nodes_per_layer": [8,8,8],
+    "activation_function": torch.nn.ReLU(),
+    "loss_fn": torch.nn.L1Loss(),
+    "lr": 0.01
+},
+{
+    "nodes_per_layer": [6,6,6,6],
+    "activation_function": torch.nn.ReLU(),
+    "loss_fn": torch.nn.L1Loss(),
+    "lr": 0.01
+},
+{
+    "nodes_per_layer": [16,16,16],
+    "activation_function": torch.nn.ReLU(),
+    "loss_fn": torch.nn.L1Loss(),
+    "lr": 0.01
+},
+
+{
+    "nodes_per_layer": [16,16,16,16],
+    "activation_function": torch.nn.ReLU(),
+    "loss_fn": torch.nn.L1Loss(),
+    "lr": 0.01
+},
+{
+    "nodes_per_layer": [32,32],
+    "activation_function": torch.nn.ReLU(),
+    "loss_fn": torch.nn.L1Loss(),
+    "lr": 0.01
+},
+{
+    "nodes_per_layer": [32,32,32],
+    "activation_function": torch.nn.ReLU(),
+    "loss_fn": torch.nn.L1Loss(),
+    "lr": 0.01
+},
+{
+    "nodes_per_layer": [128,128],
+    "activation_function": torch.nn.ReLU(),
+    "loss_fn": torch.nn.L1Loss(),
+    "lr": 0.01
+},
+
+{
+    "nodes_per_layer": [64,64],
+    "activation_function": torch.nn.ReLU(),
+    "loss_fn": torch.nn.L1Loss(),
+    "lr": 0.01
+},
+{
+    "nodes_per_layer": [64,64,64],
+    "activation_function": torch.nn.ReLU(),
+    "loss_fn": torch.nn.L1Loss(),
+    "lr": 0.01
+},
+{
+    "nodes_per_layer": [128,128,128],
+    "activation_function": torch.nn.ReLU(),
+    "loss_fn": torch.nn.L1Loss(),
+    "lr": 0.01
+}
     ]
 
     start = time.time()
     experiment.plot_error_vs_epochs(
     model_configs=model_configs,
     epoch_counts=[400,500,1000,1500,2000,2500,3000,3500,4000,5000,6000,7000,8000,9000,10000,12000,14000,16000,18000,20000,25000,30000,35000,40000],
-    fixed_samples=3000,parallel=True)
+    fixed_samples=3000,parallel=False)
 
     print(f"Epochs-Time: {time.time() - start:.2f}s")
     start = time.time()
     experiment.plot_error_vs_samples(
         model_configs=model_configs,
         sample_counts=[1000,1500,2000,3000,4000,5000,6000,7000,8000,9000,10000,12000,14000,16000,18000,20000],  
-        fixed_epochs=10000,parallel=True
+        fixed_epochs=10000,parallel=False
     )
+    
     print(f"Samples-Time: {time.time() - start:.2f}s")
 
 def clusterShit():
@@ -290,12 +293,12 @@ def clusterShit():
         plotEpochsAndStuffVsFunction(func)
 
 def dgl_visualizer():
-    dgl_visualizer = DGL_Visualizer("3D_Vector_Fields", getApprox(),Function_Lorentz_DGL(),loss_fn=torch.nn.SmoothL1Loss(), parallel= True)
+    dgl_visualizer = DGL_Visualizer("3D_Vector_Fields", getApprox(),Function_Lorentz_DGL(),loss_fn=torch.nn.SmoothL1Loss(), parallel= False)
     dgl_visualizer.train()
 
     dgl_visualizer.plot_trajectories_video(n_steps=1000,delta=0.004,fps=20,combine=False)
 
-    dgl_visualizer.plot_trajectories_video(n_steps=1000,delta=0.004,fps=20,combine=True)
+    dgl_visualizer.plot_trajectories_video(n_steps=1000,delta=0.004,fps=20,combine=False)
     dgl_visualizer.plot_trajectories_3D_all()
     exp_dgl_function()
 
@@ -312,3 +315,6 @@ def all_functions_plotting():
 #exp_plotting_loss_vs_epochs()
 #dgl_visualizer()
 all_functions_plotting()
+#startCasualExp()
+
+#exp_sinus_4D_function()

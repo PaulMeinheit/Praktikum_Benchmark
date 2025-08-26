@@ -175,8 +175,9 @@ def worker_plot_error_vs_samples(args):
     model.train(function)
     X_test, Y_test = _sample_data(function, 1000)
     preds = model.predict(X_test)
-    mse = np.mean(np.abs(preds - Y_test) / (np.abs(Y_test) + epsilon))
-    return (model.name, s, mse)
+    rel_error = np.mean(np.abs(preds - Y_test) / (np.abs(Y_test) + epsilon))
+    model.update_name_without_epochs_and_samplepoints()
+    return (model.name, s, rel_error)
 
 def worker_plot_error_vs_epochs(args):
     function, config, epochs, fixed_samples, epsilon= args
@@ -188,14 +189,14 @@ def worker_plot_error_vs_epochs(args):
     model.train(function)
     X_test, Y_test = _sample_data(function, 1000)
     preds = model.predict(X_test)
-    mse = np.mean(np.abs(preds - Y_test) / (np.abs(Y_test) + epsilon))
+    rel_error = np.mean(np.abs(preds - Y_test) / (np.abs(Y_test) + epsilon))
     model.update_name_without_epochs_and_samplepoints()
-    return (model.name, epochs, mse)
+    return (model.name, epochs, rel_error)
 
 
 class Experiment_ND:
     def __init__(self, name, approximators, function, loss_fn=torch.nn.MSELoss(),
-                 parallel=False,vmin=1e-17,vmax=1e50,logscale=False, epsilon=1e-8):
+                 parallel=False,vmin=1e-12,vmax=1e30,logscale=False, epsilon=1e-8):
         self.name = name
         self.approximators = approximators
         self.function = function
@@ -207,7 +208,7 @@ class Experiment_ND:
         self.results = []
         self.X = None
         self.Y_true = None
-        self.epsilon = epsilon  # <<<<<<<< NEU
+        self.epsilon = epsilon
 
     def save_plot(self,fig, filename, save_dir=None, ext="svg", timestamp=True):
         if save_dir==None:
@@ -268,6 +269,7 @@ class Experiment_ND:
     def _apply_logscale(self, values):
         if self.logscale:
             values = np.clip(values, self.vmin, self.vmax)
+            values = values[np.isfinite(values)]
             return np.log10(values)
         return values
 
@@ -278,6 +280,9 @@ class Experiment_ND:
     def plot_error_histograms(self, bins="auto", loss_fn=None, save_dir=None, max_cols=3):
         Y_true = np.atleast_2d(self.Y_true)
         results_with_error = []
+        
+        print(f"Anzahl der Approximatoren im Histogramm: {len(results_with_error)}")
+        
         for res in self.results:
             Y_pred = np.atleast_2d(res['Y_pred'])
             if loss_fn is not None:
@@ -293,10 +298,14 @@ class Experiment_ND:
                 loss_name="Relativer L1-Fehler"
                 error = np.abs(Y_true - Y_pred) / (np.abs(Y_true) + self.epsilon)
                 error = error.flatten()  # Falls mehrdimensional
-        error = self._apply_logscale(error)
-        mu = np.mean(error)
-        results_with_error.append((mu, res, error))
-
+                error = np.clip(error, self.vmin, self.vmax)
+                error = error[np.isfinite(error)]
+            error = self._apply_logscale(error)
+            mu = np.mean(error)
+            results_with_error.append((mu, res, error))
+        for mu, res, error in results_with_error:
+            print(f"{res['name']}: Fehler-Mittelwert = {mu:.3g}, Fehler-Array shape = {error.shape}")
+        
         # Sortiere nach Fehler-Mittelwert aufsteigend (besser = kleinerer Fehler)
         results_with_error.sort(key=lambda x: x[0])
 
@@ -313,7 +322,7 @@ class Experiment_ND:
             sigma2 = np.var(error)
 
             ax.hist(error, bins=bins, color='lightcoral', edgecolor='black')
-            ax.set_title(f"{name} mit Fehlermaß "+loss_name)
+            ax.set_title(f"{name} mit Fehlermaß " + loss_name)
             ax.set_xlabel("Fehler")
             ax.set_ylabel("Häufigkeit")
             ax.grid(True)
@@ -707,7 +716,7 @@ class Experiment_ND:
 
         input_dim = self.function.inputDim
 
-        # === 1. Zufällige Testeingaben generieren innerhalb des Eingabebereichs ===
+        # === 1. Zufällige Testeingaben generieren innerhalb des Eingabereichs ===
         low = np.array(self.function.inDomainStart)
         high = np.array(self.function.inDomainEnd)
         X = np.random.uniform(low, high, size=(n_poses, input_dim))
@@ -782,10 +791,10 @@ class Experiment_ND:
             output = [worker_plot_error_vs_samples(arg) for arg in all_args]
 
         results = {}
-        for name, s, mse in output:
+        for name, s, rel_error in output:
             if name not in results:
                 results[name] = []
-            results[name].append((s, mse))
+            results[name].append((s, rel_error))
 
         for name in results:
             # Sortiere nach Sample Count, damit die Reihenfolge stimmt!
