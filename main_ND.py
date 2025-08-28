@@ -314,8 +314,9 @@ def all_functions_plotting():
 #plotEpochsAndStuffVsFunction(Function_Lorentz_DGL())
 #exp_plotting_loss_vs_epochs()
 #dgl_visualizer()
-dgl_visualizer()
 all_functions_plotting()
+dgl_visualizer()
+
 #startCasualExp()
 
 #exp_sinus_4D_function()
