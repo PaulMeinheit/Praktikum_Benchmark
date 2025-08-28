@@ -22,5 +22,5 @@ class Function_Periodic_Behaviour(FunctionND):
 
         out1 =  + np.cos(22.1 * y) + np.sin(3.2223 * y) + np.sin(2.5 * y)
         out2 = np.sin(2.425 * np.pi * x) + np.cos(2.123 * np.pi * x) + np.cos(2.123 * np.pi * x)
-        
-        return out1 + out2
+
+        return self.format_output_shape(out1 + out2)

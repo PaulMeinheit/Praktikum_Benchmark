@@ -16,5 +16,5 @@ class Function_Exponential(FunctionND):
         c= 0.5
         d= 12.0
 
-        return 2**x + 3**y 
+        return self.format_output_shape(2**x + 3**y + d)
 

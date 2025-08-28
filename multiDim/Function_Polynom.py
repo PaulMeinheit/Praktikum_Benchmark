@@ -17,8 +17,8 @@ class Function_Polynom(FunctionND):
         
         d= 12.0
 
-        return x * y + 2 * x + \
+        return self.format_output_shape(x * y + 2 * x + \
                a*np.power(x,2) + b*np.power(y,2) + d + \
                0.1*np.power(x,3) + 0.1*np.power(y,3) + \
-               0.01*np.power(x,4) + 0.01*np.power(y,4) 
+               0.01*np.power(x,4) + 0.01*np.power(y,4))
 

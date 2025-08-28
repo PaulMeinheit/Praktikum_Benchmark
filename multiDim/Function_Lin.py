@@ -15,4 +15,4 @@ class Function_Lin(FunctionND):
         a= 8.0
         b= 16.0
         d= 64.0
-        return a*x + b*y + d
+        return self.format_output_shape(a*x + b*y + d)

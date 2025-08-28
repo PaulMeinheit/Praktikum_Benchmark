@@ -817,9 +817,9 @@ class Experiment_ND:
             else:
                 ax.plot(sample_counts, np.log10(errors) if self.logscale else errors, color='gray', alpha=0.3, linewidth=1)
 
-        ax.set_xlabel("Trainingspunkte")
-        ax.set_ylabel("log10(MSE)" if self.logscale else "MSE")
-        ax.set_title(f"Fehler vs. Trainingspunkte (Epochen={fixed_epochs})")
+        ax.set_xlabel("samples/epoch")
+        ax.set_ylabel("log10(rel.error)" if self.logscale else "rel. error")
+        ax.set_title(f"error vs. samples (Epochs={fixed_epochs})")
         ax.grid(True)
         ax.legend()
         self.save_plot(fig, "error_vs_samples"+self.function.name)

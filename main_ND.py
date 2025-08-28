@@ -300,7 +300,7 @@ def dgl_visualizer():
 
     dgl_visualizer.plot_trajectories_video(n_steps=1000,delta=0.004,fps=20,combine=False)
     dgl_visualizer.plot_trajectories_3D_all()
-    exp_dgl_function()
+    #exp_dgl_function()
 
 
 
@@ -314,6 +314,7 @@ def all_functions_plotting():
 #plotEpochsAndStuffVsFunction(Function_Lorentz_DGL())
 #exp_plotting_loss_vs_epochs()
 #dgl_visualizer()
+dgl_visualizer()
 all_functions_plotting()
 #startCasualExp()
 
