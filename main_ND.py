@@ -52,20 +52,20 @@ def startCasualExp():
 def getApprox():
     apprx = []
     #approx_transformer = Approximator_Transformer( params=[500, 500, [16, 16]], device = device)
-    for i in {5000}:
+    for i in {5000,10000,30000}:
         for j in {4,5}:
             apprx.append(ShepardInterpolator([],i,power=j))
     #return apprx
     for i in {10000,20000}:
         for j in {3000}:
             apprx.append(Approximator_NN_ND([i,j,[2,2]]))
-            #apprx.append(Approximator_NN_ND([i,j,[4,4]]))
-            #apprx.append(Approximator_NN_ND([i,j,[8,8]]))
-            #apprx.append(Approximator_NN_ND([i,j,[8,8]]))
-            #apprx.append(Approximator_NN_ND([i,j,[16,16]]))
+            apprx.append(Approximator_NN_ND([i,j,[4,4]]))
+            apprx.append(Approximator_NN_ND([i,j,[8,8]]))
+            apprx.append(Approximator_NN_ND([i,j,[8,8]]))
+            apprx.append(Approximator_NN_ND([i,j,[16,16]]))
             apprx.append(Approximator_NN_ND([i,j,[32,32]]))
-            #apprx.append(Approximator_NN_ND([i,j,[64,64]]))
-            #apprx.append(Approximator_NN_ND([i,j,[128,128]]))
+            apprx.append(Approximator_NN_ND([i,j,[64,64]]))
+            apprx.append(Approximator_NN_ND([i,j,[128,128]]))
     #Beste Approximatoren von Test mit Epochen,sample points
     apprx.append(Approximator_NN_ND([18000,1500,[16,16,16,16]]))
     #apprx.append(Approximator_NN_ND([10000,4000,[32,32]]))
@@ -300,7 +300,7 @@ def dgl_visualizer():
 
     dgl_visualizer.plot_trajectories_video(n_steps=1000,delta=0.004,fps=20,combine=False)
     dgl_visualizer.plot_trajectories_3D_all()
-    #exp_dgl_function()
+    exp_dgl_function()
 
 
 
