@@ -196,9 +196,10 @@ def worker_plot_error_vs_epochs(args):
 
 class Experiment_ND:
     def __init__(self, name, approximators, function, loss_fn=torch.nn.MSELoss(),
-                 parallel=False,vmin=1e-12,vmax=1e30,logscale=False, epsilon=1e-8):
+                 parallel=False,vmin=1e-12,vmax=1e30,logscale=False, epsilon=1e-8, max_workers=2):
         self.name = name
         self.approximators = approximators
+        self.max_workers=max_workers
         self.function = function
         self.loss_fn = loss_fn
         self.parallel = parallel
@@ -281,7 +282,7 @@ class Experiment_ND:
         Y_true = np.atleast_2d(self.Y_true)
         results_with_error = []
         
-        print(f"Anzahl der Approximatoren im Histogramm: {len(results_with_error)}")
+        print(f"Anzahl der Approximatoren im Histogramm: {len(self.results)}")
         
         for res in self.results:
             Y_pred = np.atleast_2d(res['Y_pred'])
@@ -295,7 +296,7 @@ class Experiment_ND:
                     for y_true, y_pred in zip(Y_true, Y_pred)
                 ])
             else:
-                loss_name="Relativer L1-Fehler"
+                loss_name="rel.L1"
                 error = np.abs(Y_true - Y_pred) / (np.abs(Y_true) + self.epsilon)
                 error = error.flatten()  # Falls mehrdimensional
                 error = np.clip(error, self.vmin, self.vmax)
@@ -333,7 +334,7 @@ class Experiment_ND:
             fig.delaxes(axs[j])
 
         plt.tight_layout()
-        self.save_plot(fig, "Histograms")
+        self.save_plot(fig, f"Histograms_{self.function.name}")
 
 
     def print_loss_summary(self, mode="mse"):
@@ -376,9 +377,10 @@ class Experiment_ND:
         if self.X is None:
             raise ValueError("You must call train() before plotting.")
 
+        resolution = 300
         input_dim = self.function.inputDim
-        if resolution == None:
-            resolution = 200*input_dim*self.function.outputDim
+        output_dim = self.function.outputDim
+
         x_ranges = [
             np.linspace(self.X[:, i].min(), self.X[:, i].max(), resolution)
             for i in range(input_dim)
@@ -404,26 +406,21 @@ class Experiment_ND:
             for i in range(input_dim):
                 X_slice = np.tile(fixed_values, (resolution, 1))
                 X_slice[:, i] = x_ranges[i]
-                Y_pred = model.predict(X_slice)
                 Y_true = self.function.evaluate(X_slice)
-                Y_pred = self._apply_logscale(Y_pred)
-                Y_true = self._apply_logscale(Y_true)
-
-                # Falls nur ein Output: in 2D-Form bringen für Schleife
+                Y_pred = model.predict(X_slice)
                 if Y_true.ndim == 1:
                     Y_true = Y_true[:, np.newaxis]
                     Y_pred = Y_pred[:, np.newaxis]
+                #print(f"x_ranges[{i}].shape = {x_ranges[i].shape}, X_slice.shape = {X_slice.shape}, Y_true.shape = {Y_true.shape}")
+                
 
-                n_outputs = Y_true.shape[1]
-
-                for j in range(n_outputs):
-                    color = colors(j % 20)  # zyklisch, falls mehr als 10 Outputs
-                    axs[i].plot(x_ranges[i], Y_true[:, j], label=f"Original {j}", linestyle="-", color=color)
-                    axs[i].plot(x_ranges[i], Y_pred[:, j], label=f"Prediction {j}", linestyle="--", color=color)
+                for j in range(output_dim):
+                    axs[i].plot(x_ranges[i], Y_true[:, j], label=f"Original {j}", linestyle="-", color=colors(j))
+                    axs[i].plot(x_ranges[i], Y_pred[:, j], label=f"Prediction {j}", linestyle="--", color=colors(j))
 
                 axs[i].set_title(f"1D-Schnitt – Dimension {i}")
                 axs[i].set_xlabel(f"x_{i}")
-                axs[i].set_ylabel(self._label("Output"))
+                axs[i].set_ylabel("Output")
                 axs[i].legend()
                 axs[i].grid(True)
 
@@ -776,7 +773,7 @@ class Experiment_ND:
   
   
     def plot_error_vs_samples(self, model_configs, sample_counts, fixed_epochs,
-                         test_points=1000, parallel=False):
+                         test_points=10000, parallel=False):
         global fixed_epochs_global, X_test_global, Y_test_global
         fixed_epochs_global = fixed_epochs
         function = self.function
@@ -785,7 +782,7 @@ class Experiment_ND:
         all_args = [(function, config, s, fixed_epochs, self.epsilon) for config in model_configs for s in sample_counts]
 
         if parallel:
-            with ProcessPoolExecutor(max_workers=6) as executor:
+            with ProcessPoolExecutor(max_workers=self.max_workers) as executor:
                 output = list(executor.map(worker_plot_error_vs_samples, all_args))
         else:
             output = [worker_plot_error_vs_samples(arg) for arg in all_args]
@@ -819,14 +816,14 @@ class Experiment_ND:
 
         ax.set_xlabel("samples/epoch")
         ax.set_ylabel("log10(rel.error)" if self.logscale else "rel. error")
-        ax.set_title(f"error vs. samples (Epochs={fixed_epochs})")
+        ax.set_title(f"error vs. samples (epochs={fixed_epochs})")
         ax.grid(True)
         ax.legend()
         self.save_plot(fig, "error_vs_samples"+self.function.name)
 
 
     def plot_error_vs_epochs(self, model_configs, epoch_counts, fixed_samples,
-                        test_points=1000, parallel=False):
+                        test_points=10000, parallel=False):
         global fixed_samples_global, X_test_global, Y_test_global
         fixed_samples_global = fixed_samples
         function = self.function
@@ -835,7 +832,7 @@ class Experiment_ND:
         all_args = [(function, config, e, fixed_samples, self.epsilon) for config in model_configs for e in epoch_counts]
 
         if parallel:
-            with ProcessPoolExecutor(max_workers=6) as executor:
+            with ProcessPoolExecutor(max_workers=self.max_workers) as executor:
                 output = list(executor.map(worker_plot_error_vs_epochs, all_args))
         else:
             output = [worker_plot_error_vs_epochs(arg) for arg in all_args]
@@ -867,9 +864,9 @@ class Experiment_ND:
             else:
                 ax.plot(epoch_counts, np.log10(errors) if self.logscale else errors, color='gray', alpha=0.3, linewidth=1)
             
-        ax.set_xlabel("Epochen")
-        ax.set_ylabel("log10(MSE)" if self.logscale else "MSE")
-        ax.set_title(f"Fehler vs. Epochen (Samples={fixed_samples})")
+        ax.set_xlabel("epochs")
+        ax.set_ylabel("log10(rel. error)" if self.logscale else "rel. error")
+        ax.set_title(f"error vs. samples (samples={fixed_samples})")
         ax.grid(True)
         ax.legend()
         self.save_plot(fig, "error_vs_epochs"+self.function.name)

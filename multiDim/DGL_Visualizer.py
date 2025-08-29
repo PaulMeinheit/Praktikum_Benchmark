@@ -73,8 +73,9 @@ def train_apprx(args):
 
 class DGL_Visualizer:
     def __init__(self, name, approximators, function, loss_fn=torch.nn.MSELoss(),
-                 parallel=False,vmin=1e-17,vmax=1e50,logscale=False):
+                 parallel=False,vmin=1e-17,vmax=1e50,logscale=False,max_workers=2):
         self.name = name
+        self.max_workers = max_workers
         self.approximators = approximators
         self.function = function
         self.loss_fn = loss_fn
@@ -147,7 +148,7 @@ class DGL_Visualizer:
         ]
         
         if self.parallel:
-            with ProcessPoolExecutor(max_workers=16) as executor:
+            with ProcessPoolExecutor(max_workers=self.max_workers) as executor:
                 results_raw = list(executor.map(plotTrajectories, data))
         else:
             results_raw = [plotTrajectories(arg) for arg in data]

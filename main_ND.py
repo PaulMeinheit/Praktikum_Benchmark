@@ -40,13 +40,13 @@ def time_vs_epochs_n_samplePoints(function,name="epochen_samplepoints_map",sampl
     Experiment_ND("test",[],function).plot_training_time_heatmap_random_sampling(name,function,activation_function,loss_fn_class,epochs_range, sample_points_range,nodes_per_layer,n_random_samples)
 
 def startCasualExp():
-    exp = Experiment_ND("Test",getApprox(),getFunc(),parallel=False,logscale=True,loss_fn=torch.nn.SmoothL1Loss())
+    exp = Experiment_ND("Test",getApprox(),getFunc(),parallel=True,logscale=True,loss_fn=torch.nn.SmoothL1Loss(),max_workers=6)
     exp.train()
     exp.print_loss_summary(mode="mse")
     exp.print_loss_summary(mode="l1")
     exp.print_loss_summary(mode="max")
     exp.plot_error_histograms()
-    exp.plot_pca_querschnitt_all_outputs()
+    #exp.plot_pca_querschnitt_all_outputs()
     exp.plot_1d_slices(mode="median")
 
 def getApprox():
@@ -55,9 +55,12 @@ def getApprox():
     for i in {5000,10000,30000}:
         for j in {4,5}:
             apprx.append(ShepardInterpolator([],i,power=j))
-    #return apprx
-    for i in {10000,20000}:
-        for j in {3000}:
+    
+    apprx.append(Approximator_NN_ND([18000,1500,[16,16,16,16]]))
+    apprx.append(Approximator_NN_ND([10000,4000,[32,32]]))
+    return apprx
+    for i in {20000,40000}:
+        for j in {4000}:
             apprx.append(Approximator_NN_ND([i,j,[2,2]]))
             apprx.append(Approximator_NN_ND([i,j,[4,4]]))
             apprx.append(Approximator_NN_ND([i,j,[8,8]]))
@@ -68,9 +71,9 @@ def getApprox():
             apprx.append(Approximator_NN_ND([i,j,[128,128]]))
     #Beste Approximatoren von Test mit Epochen,sample points
     apprx.append(Approximator_NN_ND([18000,1500,[16,16,16,16]]))
-    #apprx.append(Approximator_NN_ND([10000,4000,[32,32]]))
-    #apprx.append(Approximator_NN_ND([20000,6000,[32,32]]))
-    #apprx.append(Approximator_NN_ND([20000,6000,[64,64]]))
+    apprx.append(Approximator_NN_ND([10000,4000,[32,32]]))
+    apprx.append(Approximator_NN_ND([20000,6000,[32,32]]))
+    apprx.append(Approximator_NN_ND([20000,6000,[64,64]]))
     
     return apprx
     for i in {300,3000}:
@@ -89,12 +92,13 @@ def getFunc():
     function_sin_2D = Function_Sin_2D()
     function_BasicArm= Function_Basic1DArm()
     function_sin_4D = Function_Sin_4D()
+    function_Lorentz_DGL = Function_Lorentz_DGL()
     function_mandel = Function_Mandelbrot()
     function_linear = Function_Lin()
     function_Polynom = Function_Polynom()
     function_exponential = Function_Exponential()
 
-    return function_linear
+    return function_Lorentz_DGL
 
 #exp = Experiment_ND("Fourier_Frequenzen_vs_Loss",[],getFunc(),logscale=True)
 #exp.plot_norms_vs_fourier_freq(how_many_points_on_plot= 15,parallel=False,max_freqs=300,ridge_rate=1e-1,samplePoints=20000)
@@ -164,7 +168,7 @@ def exp_plotting_loss_vs_frequencies():
 
 
 def plotEpochsAndStuffVsFunction(function):
-    experiment = Experiment_ND("Compare_Complexity",[],function,logscale=True,parallel=False)
+    experiment = Experiment_ND("Compare_Complexity",[],function,logscale=True,parallel=True)
     model_configs = [
         {
             "nodes_per_layer": [2, 2],
@@ -179,6 +183,18 @@ def plotEpochsAndStuffVsFunction(function):
     "lr": 0.01
 },
 {
+            "nodes_per_layer": [2, 2],
+            "activation_function": torch.nn.ReLU(),
+            "loss_fn": torch.nn.MSELoss(),
+            "lr": 0.001
+        },
+        {
+    "nodes_per_layer": [4,4],
+    "activation_function": torch.nn.ReLU(),
+    "loss_fn": torch.nn.L1Loss(),
+    "lr": 0.001
+},
+{
     "nodes_per_layer": [8,8],
     "activation_function": torch.nn.ReLU(),
     "loss_fn": torch.nn.L1Loss(),
@@ -191,44 +207,7 @@ def plotEpochsAndStuffVsFunction(function):
     "lr": 0.01
 },
 {
-    "nodes_per_layer": [32,32,32,32],
-    "activation_function": torch.nn.ReLU(),
-    "loss_fn": torch.nn.L1Loss(),
-    "lr": 0.01
-},
-{
-    "nodes_per_layer": [64,64,64,64],
-    "activation_function": torch.nn.Tanh(),
-    "loss_fn": torch.nn.L1Loss(),
-    "lr": 0.01
-},
-{
     "nodes_per_layer": [4,4,4],
-    "activation_function": torch.nn.ReLU(),
-    "loss_fn": torch.nn.L1Loss(),
-    "lr": 0.01
-},
-{
-    "nodes_per_layer": [8,8,8],
-    "activation_function": torch.nn.ReLU(),
-    "loss_fn": torch.nn.L1Loss(),
-    "lr": 0.01
-},
-{
-    "nodes_per_layer": [6,6,6,6],
-    "activation_function": torch.nn.ReLU(),
-    "loss_fn": torch.nn.L1Loss(),
-    "lr": 0.01
-},
-{
-    "nodes_per_layer": [16,16,16],
-    "activation_function": torch.nn.ReLU(),
-    "loss_fn": torch.nn.L1Loss(),
-    "lr": 0.01
-},
-
-{
-    "nodes_per_layer": [16,16,16,16],
     "activation_function": torch.nn.ReLU(),
     "loss_fn": torch.nn.L1Loss(),
     "lr": 0.01
@@ -251,7 +230,18 @@ def plotEpochsAndStuffVsFunction(function):
     "loss_fn": torch.nn.L1Loss(),
     "lr": 0.01
 },
-
+{
+    "nodes_per_layer": [256,256],
+    "activation_function": torch.nn.ReLU(),
+    "loss_fn": torch.nn.L1Loss(),
+    "lr": 0.01
+},
+{
+    "nodes_per_layer": [412,412],
+    "activation_function": torch.nn.ReLU(),
+    "loss_fn": torch.nn.L1Loss(),
+    "lr": 0.01
+},
 {
     "nodes_per_layer": [64,64],
     "activation_function": torch.nn.ReLU(),
@@ -275,16 +265,16 @@ def plotEpochsAndStuffVsFunction(function):
     start = time.time()
     experiment.plot_error_vs_epochs(
     model_configs=model_configs,
-    epoch_counts=[400,500,1000,1500,2000,2500,3000,3500,4000,5000,6000,7000,8000,9000,10000,12000,14000,16000,18000,20000,25000,30000,35000,40000],
-    fixed_samples=3000,parallel=False)
+    epoch_counts=[400,500,1000,2000,3000,4000,6000,8000,9000,10000,12000,14000,16000,18000,20000,25000,30000,35000,40000,50000,60000],
+    fixed_samples=3000,parallel=True)
 
     print(f"Epochs-Time: {time.time() - start:.2f}s")
-    start = time.time()
-    experiment.plot_error_vs_samples(
-        model_configs=model_configs,
-        sample_counts=[1000,1500,2000,3000,4000,5000,6000,7000,8000,9000,10000,12000,14000,16000,18000,20000],  
-        fixed_epochs=10000,parallel=False
-    )
+    #start = time.time()
+    #experiment.plot_error_vs_samples(
+    #    model_configs=model_configs,
+    #    sample_counts=[1000,1500,2000,3000,4000,5000,6000,7000,8000,9000,10000,12000,14000,16000,18000,20000],  
+    #    fixed_epochs=10000,parallel=True
+    #)
     
     print(f"Samples-Time: {time.time() - start:.2f}s")
 
@@ -305,8 +295,8 @@ def dgl_visualizer():
 
 
 def all_functions_plotting():
-    plotEpochsAndStuffVsFunction(Function_Lin())
     plotEpochsAndStuffVsFunction(Function_Exponential())
+    plotEpochsAndStuffVsFunction(Function_Lin())
     plotEpochsAndStuffVsFunction(Function_Polynom())
     plotEpochsAndStuffVsFunction(Function_Lorentz_DGL())
 
@@ -317,6 +307,6 @@ def all_functions_plotting():
 all_functions_plotting()
 dgl_visualizer()
 
-#startCasualExp()
+startCasualExp()
 
 #exp_sinus_4D_function()
