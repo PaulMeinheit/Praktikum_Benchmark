@@ -1,7 +1,7 @@
 from multiDim.FunctionND import FunctionND
 import numpy as np
 class Function_Exponential(FunctionND):
-    def __init__(self, name="Function_Exponential", inputDim=2,outputDim=1,inDomainStart=[-10,-10],inDomainEnd=[10,10]):
+    def __init__(self, name="Function_Exponential", inputDim=2,outputDim=1,inDomainStart=[-10,-10],inDomainEnd=[20,20]):
         self.name = name
         self.inDomainStart = inDomainStart
         self.inDomainEnd = inDomainEnd

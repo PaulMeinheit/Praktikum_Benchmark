@@ -172,6 +172,7 @@ def worker_plot_error_vs_samples(args):
         activationFunction=config.get("activation_function", torch.nn.ReLU()),
         lossCriterium=config.get("loss_fn", torch.nn.MSELoss())
     )
+    
     model.train(function)
     X_test, Y_test = _sample_data(function, 1000)
     preds = model.predict(X_test)
@@ -196,7 +197,7 @@ def worker_plot_error_vs_epochs(args):
 
 class Experiment_ND:
     def __init__(self, name, approximators, function, loss_fn=torch.nn.MSELoss(),
-                 parallel=False,vmin=1e-12,vmax=1e30,logscale=False, epsilon=1e-8, max_workers=2):
+                 parallel=False,vmin=1e-12,vmax=1e30,logscale=False, epsilon=1e-3, max_workers=4):
         self.name = name
         self.approximators = approximators
         self.max_workers=max_workers
@@ -297,7 +298,28 @@ class Experiment_ND:
                 ])
             else:
                 loss_name="rel.L1"
+                
+                
+                #|(y-f)|
+                #-------------
+                #    |f|
+                #f1=x
+                #y1=x-1
+                #erreicht f'=f-1
+                #f2 = x+10e6
+                #y2=x+10e6 -1
+
+                #error von f2: |y2-f2|/|f2| = |(x+10e6-1)-(x+10e6)|/(x+10e6) = 1/(x+10e6)
+
+                #f=10e6
+                #y=0 error: 1 -> log = 0
+                
+                #f=0
+                #y=1 error: 1/(10e-8) = 10e8 -> log 8
+                
+
                 error = np.abs(Y_true - Y_pred) / (np.abs(Y_true) + self.epsilon)
+            
                 error = error.flatten()  # Falls mehrdimensional
                 error = np.clip(error, self.vmin, self.vmax)
                 error = error[np.isfinite(error)]

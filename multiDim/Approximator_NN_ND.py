@@ -33,7 +33,7 @@ class Approximator_NN_ND(ApproximatorND):
             self.name = f"NN_uninitialized"
             return
         layer_str = "-".join(map(str, [self.input_dim] + self.nodesPerLayer + [self.output_dim]))
-        self.name = f"NN_{layer_str}-learnR8_{self.learningRate}-act_{self.activationFunction.__class__.__name__}"
+        self.name = f"NN_{layer_str}-lr8_{self.learningRate}-act_{self.activationFunction.__class__.__name__}"
 
     def generate_random_data(self, samplePoints:int):
         self.input_dim = self.function.inputDim
@@ -49,20 +49,22 @@ class Approximator_NN_ND(ApproximatorND):
         self.function = function
         self.input_dim = self.function.inputDim
         self.output_dim = self.function.outputDim
+        self.nn_general = NN_General(self.input_dim, self.output_dim, self.nodesPerLayer,self.activationFunction)
+        self.optimizer = optim.Adam(self.nn_general.parameters(), lr=self.learningRate)
+        
+        
         for epoch in range(self.epochs):
-
+            # Daten generieren
             X, Y = self.generate_random_data(self.samplePoints)
-
             input_tensor = torch.tensor(X, dtype=torch.float32)
             Y = np.array(Y)
             if Y.ndim == 1:
                 Y = Y[:, np.newaxis]  # shape (n,) -> (n, 1)
             target_tensor = torch.tensor(Y, dtype=torch.float32)
 
-            self.nn_general = NN_General(self.input_dim, self.output_dim, self.nodesPerLayer,self.activationFunction)
-            self.optimizer = optim.Adam(self.nn_general.parameters(), lr=self.learningRate)
+            
 
-        
+            #Training
             self.nn_general.train()
             self.optimizer.zero_grad()
             output = self.nn_general(input_tensor)
