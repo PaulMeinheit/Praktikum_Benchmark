@@ -25,7 +25,7 @@ class Approximator_NN_ND(ApproximatorND):
             self.name = f"NN_uninitialized"
             return
         layer_str = "-".join(map(str, [self.input_dim] + self.nodesPerLayer + [self.output_dim]))
-        self.name = f"NN_{layer_str}_E{self.epochs}_N{self.samplePoints}_lr8{self.learningRate}"
+        self.name = f"NN_{layer_str}_E{self.epochs}_lr8{self.learningRate}"
 
     
     def update_name_without_epochs_and_samplepoints(self):
@@ -33,7 +33,7 @@ class Approximator_NN_ND(ApproximatorND):
             self.name = f"NN_uninitialized"
             return
         layer_str = "-".join(map(str, [self.input_dim] + self.nodesPerLayer + [self.output_dim]))
-        self.name = f"NN_{layer_str}-lr8_{self.learningRate}-act_{self.activationFunction.__class__.__name__}"
+        self.name = f"NN_{layer_str}-lr8_{self.learningRate}"
 
     def generate_random_data(self, samplePoints:int):
         self.input_dim = self.function.inputDim
