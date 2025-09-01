@@ -40,17 +40,34 @@ def time_vs_epochs_n_samplePoints(function,name="epochen_samplepoints_map",sampl
     Experiment_ND("test",[],function).plot_training_time_heatmap_random_sampling(name,function,activation_function,loss_fn_class,epochs_range, sample_points_range,nodes_per_layer,n_random_samples)
 
 def startCasualExp():
-    exp = Experiment_ND("Test",getApprox(),getFunc(),parallel=True,logscale=True,loss_fn=torch.nn.SmoothL1Loss(),max_workers=4)
-    exp.train()
+    for func in {Function_Exponential(),Function_Lin(),Function_Polynom(),Function_Lorentz_DGL()}:
+        exp = Experiment_ND("",getApprox(),func,parallel=True,logscale=True,loss_fn=torch.nn.SmoothL1Loss(),max_workers=4)
+        exp.train()
 #    exp.print_loss_summary(mode="mse")
 #    exp.print_loss_summary(mode="l1")
 #    exp.print_loss_summary(mode="max")
-    exp.plot_error_histograms()
+        exp.plot_error_histograms()
     #exp.plot_pca_querschnitt_all_outputs()
-    exp.plot_1d_slices(mode="median")
+        exp.plot_1d_slices(mode="median")
 
 def getApprox():
     apprx = []
+    apprx.append(Approximator_NN_ND([60000, 3000, [2, 2], 0.01, torch.nn.ReLU(), torch.nn.MSELoss()]))
+    apprx.append(Approximator_NN_ND([60000, 3000, [4, 4], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([60000, 3000, [2, 2], 0.001, torch.nn.ReLU(), torch.nn.MSELoss()]))
+    apprx.append(Approximator_NN_ND([60000, 3000, [4, 4], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([60000, 3000, [8, 8], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([60000, 3000, [16, 16], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([60000, 3000, [4, 4, 4], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([60000, 3000, [32, 32], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([60000, 3000, [32, 32, 32], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([60000, 3000, [128, 128], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([60000, 3000, [256, 256], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([60000, 3000, [412, 412], 0.005, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([60000, 3000, [64, 64], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([60000, 3000, [64, 64, 64], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([60000, 3000, [128, 128, 128], 0.03, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    return apprx
     #approx_transformer = Approximator_Transformer( params=[500, 500, [16, 16]], device = device)
     for i in {5000,10000,30000}:
         for j in {4,5}:
@@ -58,9 +75,9 @@ def getApprox():
     
     apprx.append(Approximator_NN_ND([18000,1500,[16,16,16,16]]))
     apprx.append(Approximator_NN_ND([10000,4000,[32,32]]))
+    apprx = []
     for i in {30000}:
         for j in {5000}:
-
             apprx.append(Approximator_NN_ND([i,j,[2,2]]))
             apprx.append(Approximator_NN_ND([i,j,[4,4]]))
             apprx.append(Approximator_NN_ND([i,j,[8,8]]))
@@ -309,6 +326,6 @@ def all_functions_plotting():
 #exp_plotting_loss_vs_epochs()
 #dgl_visualizer()
 #all_functions_plotting()
-dgl_visualizer()
-#startCasualExp()
+#dgl_visualizer()
+startCasualExp()
 #exp_sinus_4D_function()
