@@ -67,11 +67,11 @@ def getApprox():
     apprx.append(Approximator_NN_ND([60000, 3000, [64, 64], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))
     apprx.append(Approximator_NN_ND([60000, 3000, [64, 64, 64], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
     apprx.append(Approximator_NN_ND([60000, 3000, [128, 128, 128], 0.03, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    return apprx
     #approx_transformer = Approximator_Transformer( params=[500, 500, [16, 16]], device = device)
-    for i in {5000,10000,30000}:
+    for i in {100,400,3000}:
         for j in {4,5}:
             apprx.append(ShepardInterpolator([],i,power=j))
+    return apprx
     
     apprx.append(Approximator_NN_ND([18000,1500,[16,16,16,16]]))
     apprx.append(Approximator_NN_ND([10000,4000,[32,32]]))
