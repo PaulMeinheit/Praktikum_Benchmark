@@ -41,7 +41,7 @@ def time_vs_epochs_n_samplePoints(function,name="epochen_samplepoints_map",sampl
 
 def startCasualExp():
     for func in {Function_Exponential(),Function_Lin(),Function_Polynom(),Function_Lorentz_DGL()}:
-        exp = Experiment_ND("",getApprox(),func,parallel=True,logscale=True,loss_fn=torch.nn.SmoothL1Loss(),max_workers=4)
+        exp = Experiment_ND(f"Histograms_{func.name}",getApprox(),func,parallel=True,logscale=True,max_workers=4)
         exp.train()
 #    exp.print_loss_summary(mode="mse")
 #    exp.print_loss_summary(mode="l1")
@@ -67,9 +67,8 @@ def getApprox():
     apprx.append(Approximator_NN_ND([60000, 3000, [64, 64], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))
     apprx.append(Approximator_NN_ND([60000, 3000, [64, 64, 64], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
     apprx.append(Approximator_NN_ND([60000, 3000, [128, 128, 128], 0.03, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    #approx_transformer = Approximator_Transformer( params=[500, 500, [16, 16]], device = device)
     for i in {100,400,3000}:
-        for j in {4,5}:
+        for j in {1,2,3,4,5}:
             apprx.append(ShepardInterpolator([],i,power=j))
     return apprx
     

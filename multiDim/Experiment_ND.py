@@ -229,7 +229,7 @@ class Experiment_ND:
         low = np.array(self.function.inDomainStart)
         high = np.array(self.function.inDomainEnd)
         
-        self.X = np.random.uniform(low, high, size=(1000, input_dim))
+        self.X = np.random.uniform(low, high, size=(8000, input_dim))
         self.Y_true = self.function.evaluate(self.X)
 
         if self.parallel:
@@ -356,7 +356,7 @@ class Experiment_ND:
             fig.delaxes(axs[j])
 
         plt.tight_layout()
-        self.save_plot(fig, f"Histograms_{self.function.name}")
+        self.save_plot(fig, filename=f"Histograms_{self.function.name}")
 
 
     def print_loss_summary(self, mode="mse"):
