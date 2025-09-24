@@ -40,14 +40,14 @@ def time_vs_epochs_n_samplePoints(function,name="epochen_samplepoints_map",sampl
     Experiment_ND("test",[],function).plot_training_time_heatmap_random_sampling(name,function,activation_function,loss_fn_class,epochs_range, sample_points_range,nodes_per_layer,n_random_samples)
 
 def startCasualExp():
-    for func in {Function_Exponential(),Function_Lin(),Function_Polynom(),Function_Lorentz_DGL()}:
+    for func in {Function_Exponential(),Function_Lin(),Function_Sin_4D(),Function_Polynom(),Function_Lorentz_DGL()}:
         exp = Experiment_ND(f"Histograms_{func.name}",getApprox(),func,parallel=True,logscale=True,max_workers=4)
         exp.train()
-#    exp.print_loss_summary(mode="mse")
-#    exp.print_loss_summary(mode="l1")
-#    exp.print_loss_summary(mode="max")
+        exp.print_loss_summary(mode="mse")
+        exp.print_loss_summary(mode="l1")
+        exp.print_loss_summary(mode="max")
         exp.plot_error_histograms()
-    #exp.plot_pca_querschnitt_all_outputs()
+        exp.plot_pca_querschnitt_all_outputs()
         exp.plot_1d_slices(mode="median")
 
 def getApprox():
@@ -59,21 +59,20 @@ def getApprox():
     
     
     epochs=20000
-    apprx.append(Approximator_NN_ND([epochs, 3000, [2, 2], 0.01, torch.nn.ReLU(), torch.nn.MSELoss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [2, 2], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
     apprx.append(Approximator_NN_ND([epochs, 3000, [4, 4], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([epochs, 3000, [2, 2], 0.001, torch.nn.ReLU(), torch.nn.MSELoss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [2, 2], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))
     apprx.append(Approximator_NN_ND([epochs, 3000, [4, 4], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))
     apprx.append(Approximator_NN_ND([epochs, 3000, [8, 8], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([epochs, 3000, [16, 16], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([epochs, 3000, [4, 4, 4], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([epochs, 3000, [32, 32], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([epochs, 3000, [32, 32, 32], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
     apprx.append(Approximator_NN_ND([epochs, 3000, [128, 128], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
     apprx.append(Approximator_NN_ND([epochs, 3000, [256, 256], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([epochs, 3000, [412, 412], 0.005, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([epochs, 3000, [64, 64], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([epochs, 3000, [64, 64, 64], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([epochs, 3000, [128, 128, 128], 0.03, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [128, 128,128,128], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [256, 256,256], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [512, 512], 0.005, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [64, 64, 64,64], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))    
+    apprx.append(Approximator_NN_ND([epochs, 3000, [1024, 1024], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [1024,1024], 0.005, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [2048,2048], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))
     return apprx
     apprx.append(Approximator_NN_ND([18000,1500,[16,16,16,16]]))
     apprx.append(Approximator_NN_ND([10000,4000,[32,32]]))
@@ -222,30 +221,6 @@ def plotEpochsAndStuffVsFunction(function):
             "lr": 0.001
         },
         {
-            "nodes_per_layer": [16,16],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.001
-        },
-        {
-            "nodes_per_layer": [4,4,4],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.01
-        },
-        {
-            "nodes_per_layer": [32,32],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.01
-        },
-        {
-            "nodes_per_layer": [32,32,32],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.01
-        },
-        {
             "nodes_per_layer": [128,128],
             "activation_function": torch.nn.ReLU(),
             "loss_fn": torch.nn.L1Loss(),
@@ -280,18 +255,6 @@ def plotEpochsAndStuffVsFunction(function):
             "activation_function": torch.nn.ReLU(),
             "loss_fn": torch.nn.L1Loss(),
             "lr": 0.001
-        },
-        {
-            "nodes_per_layer": [64,64,64],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.01
-        },
-        {
-            "nodes_per_layer": [128,128,128],
-            "activation_function": torch.nn.ReLU(),
-            "loss_fn": torch.nn.L1Loss(),
-            "lr": 0.03
         }
     ]
 
@@ -299,7 +262,7 @@ def plotEpochsAndStuffVsFunction(function):
     experiment.plot_error_vs_epochs(
     model_configs=model_configs,
     epoch_counts=[400,500,1000,2000,3000,4000,6000,8000,9000,10000,12000,14000,16000,18000,20000,25000,30000,35000,40000,50000,60000],
-    fixed_samples=3000,parallel=True)
+    fixed_samples=6000,parallel=True)
 
     print(f"Epochs-Time: {time.time() - start:.2f}s")
     #start = time.time()
@@ -342,7 +305,7 @@ def all_functions_plotting():
 #dgl_visualizer()
 #all_functions_plotting()
 #dgl_visualizer()
-#startCasualExp()
+startCasualExp()
 #exp_sinus_4D_function()
 #exp_dgl_function()
 all_functions_plotting()
