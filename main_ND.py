@@ -52,26 +52,29 @@ def startCasualExp():
 
 def getApprox():
     apprx = []
-    apprx.append(Approximator_NN_ND([60000, 3000, [2, 2], 0.01, torch.nn.ReLU(), torch.nn.MSELoss()]))
-    apprx.append(Approximator_NN_ND([60000, 3000, [4, 4], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([60000, 3000, [2, 2], 0.001, torch.nn.ReLU(), torch.nn.MSELoss()]))
-    apprx.append(Approximator_NN_ND([60000, 3000, [4, 4], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([60000, 3000, [8, 8], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([60000, 3000, [16, 16], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([60000, 3000, [4, 4, 4], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([60000, 3000, [32, 32], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([60000, 3000, [32, 32, 32], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([60000, 3000, [128, 128], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([60000, 3000, [256, 256], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([60000, 3000, [412, 412], 0.005, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([60000, 3000, [64, 64], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([60000, 3000, [64, 64, 64], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    apprx.append(Approximator_NN_ND([60000, 3000, [128, 128, 128], 0.03, torch.nn.ReLU(), torch.nn.L1Loss()]))
-    for i in {100,400,3000}:
+    apprx.append(Approximator_Identity_ND([]))
+    for i in {200,400,800,1600,3200,6400,12800}:
         for j in {1,2,3,4,5}:
             apprx.append(ShepardInterpolator([],i,power=j))
-    return apprx
     
+    
+    epochs=20000
+    apprx.append(Approximator_NN_ND([epochs, 3000, [2, 2], 0.01, torch.nn.ReLU(), torch.nn.MSELoss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [4, 4], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [2, 2], 0.001, torch.nn.ReLU(), torch.nn.MSELoss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [4, 4], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [8, 8], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [16, 16], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [4, 4, 4], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [32, 32], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [32, 32, 32], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [128, 128], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [256, 256], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [412, 412], 0.005, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [64, 64], 0.001, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [64, 64, 64], 0.01, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    apprx.append(Approximator_NN_ND([epochs, 3000, [128, 128, 128], 0.03, torch.nn.ReLU(), torch.nn.L1Loss()]))
+    return apprx
     apprx.append(Approximator_NN_ND([18000,1500,[16,16,16,16]]))
     apprx.append(Approximator_NN_ND([10000,4000,[32,32]]))
     apprx = []
@@ -255,7 +258,19 @@ def plotEpochsAndStuffVsFunction(function):
             "lr": 0.01
         },
         {
-            "nodes_per_layer": [412,412],
+            "nodes_per_layer": [512,512],
+            "activation_function": torch.nn.ReLU(),
+            "loss_fn": torch.nn.L1Loss(),
+            "lr": 0.005
+        },
+        {
+            "nodes_per_layer": [1024,1024],
+            "activation_function": torch.nn.ReLU(),
+            "loss_fn": torch.nn.L1Loss(),
+            "lr": 0.005
+        },
+        {
+            "nodes_per_layer": [2048,2048],
             "activation_function": torch.nn.ReLU(),
             "loss_fn": torch.nn.L1Loss(),
             "lr": 0.005
@@ -304,11 +319,12 @@ def dgl_visualizer():
     dgl_visualizer = DGL_Visualizer("3D_Vector_Fields", getApprox(),Function_Lorentz_DGL(),loss_fn=torch.nn.SmoothL1Loss(), parallel= False)
     dgl_visualizer.train()
 
-    dgl_visualizer.plot_trajectories_video(n_steps=1000,delta=0.004,fps=20,combine=False)
+    #dgl_visualizer.plot_trajectories_video(n_steps=1000,delta=0.004,fps=20,combine=False)
 
-    dgl_visualizer.plot_trajectories_video(n_steps=1000,delta=0.004,fps=20,combine=False)
+    #dgl_visualizer.plot_trajectories_video(n_steps=1000,delta=0.004,fps=20,combine=False)
+    
     dgl_visualizer.plot_trajectories_3D_all()
-    exp_dgl_function()
+    #exp_dgl_function()
 
 
 
@@ -326,5 +342,7 @@ def all_functions_plotting():
 #dgl_visualizer()
 #all_functions_plotting()
 #dgl_visualizer()
-startCasualExp()
+#startCasualExp()
 #exp_sinus_4D_function()
+#exp_dgl_function()
+all_functions_plotting()

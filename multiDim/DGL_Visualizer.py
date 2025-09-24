@@ -19,7 +19,7 @@ def plotTrajectories(args):
     fig.patch.set_facecolor('black')
     ax.set_facecolor('black')
     colors = ['#FF6F00', '#00E676', '#2979FF', '#D500F9']
-    
+    start_time = time.time()
     for idx, sp in enumerate(start_points):
         traj = [sp.copy()]
         p = sp.copy()
@@ -32,7 +32,7 @@ def plotTrajectories(args):
             #    print(f"{approximator.name}-simulation at starting_point: {idx} & step: {i}")
         traj = np.array(traj)
         ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], color=colors[idx % len(colors)], linewidth=1.2, alpha=0.9)
-
+    print(f"✅ {approximator.name} plotting done in {time.time() - start_time:.4f}s")
     ax.set_xlabel("x", color='white')
     ax.set_ylabel("y", color='white')
     ax.set_zlabel("z", color='white')
